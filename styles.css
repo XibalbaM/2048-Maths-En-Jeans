@@ -1,0 +1,71 @@
+:root{
+  --size: 4;
+  --cell-size: 90px;
+  --gap: 12px;
+  --board-bg: #bbada0;
+  --cell-bg: #cdc1b4;
+  --tile-radius: 8px;
+  --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box}
+body{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:#f0eadf;font-family:var(--font-family)}
+.container{width: calc(var(--cell-size) * var(--size) + var(--gap) * (var(--size) - 1) + 40px);}
+
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{font-size:28px;margin:0}
+.controls{display:flex;gap:10px;align-items:center}
+button{background:#8f7a66;border:none;color:white;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+button:hover{filter:brightness(1.05)}
+.scorebox{background:#eee;padding:8px 12px;border-radius:6px;min-width:86px;text-align:center}
+.small{font-size:12px;color:#6b5b4c}
+
+.board{position:relative;padding:20px;background:var(--board-bg);border-radius:12px;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(var(--size), var(--cell-size));grid-gap:var(--gap)}
+.cell{width:var(--cell-size);height:var(--cell-size);background:var(--cell-bg);border-radius:var(--tile-radius)}
+
+/* tiles (absolute on top of grid) */
+.tile-layer{position:absolute;left:20px;top:20px;pointer-events:none;width:calc(var(--cell-size) * var(--size) + var(--gap) * (var(--size) - 1));height:calc(var(--cell-size) * var(--size) + var(--gap) * (var(--size) - 1));}
+.tile{position:absolute;width:var(--cell-size);height:var(--cell-size);display:flex;align-items:center;justify-content:center;border-radius:var(--tile-radius);font-weight:700;font-size:24px;transition:transform 120ms ease, top 120ms ease, left 120ms ease, opacity 120ms ease;}
+.tile.new{transform:scale(0.2);opacity:0}
+.tile.show{transform:scale(1);opacity:1}
+.tile.merged{animation: pop 150ms ease}
+@keyframes pop{0%{transform:scale(1.1)}50%{transform:scale(0.95)}100%{transform:scale(1)}}
+
+/* tile colors */
+.t-2{background:#eee4da;color:#776e65}
+.t-4{background:#ede0c8;color:#776e65}
+.t-8{background:#f2b179;color:#f9f6f2}
+.t-16{background:#f59563;color:#f9f6f2}
+.t-32{background:#f67c5f;color:#f9f6f2}
+.t-64{background:#f65e3b;color:#f9f6f2}
+.t-128{background:#edcf72;color:#f9f6f2;font-size:20px}
+.t-256{background:#edcc61;color:#f9f6f2;font-size:20px}
+.t-512{background:#edc850;color:#f9f6f2;font-size:20px}
+.t-1024{background:#edc53f;color:#f9f6f2;font-size:18px}
+.t-2048{background:#edc22e;color:#f9f6f2;font-size:18px}
+
+.overlay{position:absolute;inset:0;background:rgba(238,228,218,0.85);display:flex;align-items:center;justify-content:center;border-radius:12px;flex-direction:column;padding:18px}
+.overlay p{margin:8px 0;font-size:18px}
+.placement-panel{display:flex;gap:12px;align-items:flex-start}
+.placement-values{display:flex;flex-direction:column;gap:8px}
+.value-btn{padding:8px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:700}
+.value-btn.selected{background:#a0865a; color:white; outline:3px solid #8f7a66}
+
+.config-form{display:flex;flex-direction:column;gap:12px}
+.config-form label{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.config-form input[type="text"]{padding:6px;border:1px solid #ccc;border-radius:4px}
+.config-form input[type="checkbox"]{margin-right:8px}
+.config-buttons{display:flex;gap:8px;justify-content:center}
+
+.footer{margin-top:12px;font-size:13px;color:#6b5b4c}
+button#reset {margin-top: 100px;margin-left:12px;background:#d9534f;border:none;color:white;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px}
+button#reset:hover{filter:brightness(1.05)}
+
+.picker-grid{display:grid;grid-template-columns:repeat(var(--size), 48px);grid-gap:6px}
+.picker-cell{width:48px;height:48px;background:#e7e0d6;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.picker-cell.empty{background:#fff}
+.picker-cell.selected{outline:3px solid #8f7a66}
+.picker-cell.drag-over{outline:3px solid #4CAF50}
+
+/* responsive */
+@media (max-width:480px){:root{--cell-size:64px}}
