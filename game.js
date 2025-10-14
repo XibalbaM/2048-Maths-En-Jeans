@@ -23,6 +23,7 @@ const bestEl = document.getElementById('best');
 const newBtn = document.getElementById('newgame');
 const boardEl = document.getElementById('board');
 const resetBtn = document.getElementById('reset');
+const editBtn = document.getElementById('edit');
 
 // init CSS size var
 document.documentElement.style.setProperty('--size', CONFIG.SIZE);
@@ -488,6 +489,125 @@ function promptSecondPlayer(count=1){
   });
 }
 
+// EDIT MODE
+function showEditMode(){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+
+  const title = document.createElement('p');
+  title.textContent = 'Mode Édition — Placez ou supprimez des tuiles librement.';
+
+  const panel = document.createElement('div');
+  panel.className = 'placement-panel';
+
+  // picker grid
+  const pickerGrid = document.createElement('div');
+  pickerGrid.className = 'picker-grid';
+  pickerGrid.style.setProperty('--size', CONFIG.SIZE);
+
+  // build cells
+  const cellEls = [];
+  for(let r=0;r<CONFIG.SIZE;r++){
+    for(let c=0;c<CONFIG.SIZE;c++){
+      const el = document.createElement('div');
+      el.className = 'picker-cell';
+      if(grid[r][c] === 0){
+        el.classList.add('empty');
+      } else {
+        el.classList.add('t-' + grid[r][c]);
+      }
+      el.textContent = grid[r][c] === 0 ? '' : grid[r][c];
+      el.dataset.r = r; el.dataset.c = c;
+      pickerGrid.appendChild(el);
+      cellEls.push(el);
+    }
+  }
+
+  // values area
+  const valuesDiv = document.createElement('div');
+  valuesDiv.className = 'placement-values';
+  const info = document.createElement('div');
+  info.textContent = 'Sélectionnez une valeur pour placer:';
+  valuesDiv.appendChild(info);
+  const buttonsContainer = document.createElement('div');
+  buttonsContainer.className = 'value-buttons-container';
+  valuesDiv.appendChild(buttonsContainer);
+  const valueButtons = [];
+  let current = 2;
+  for(let i = 0; i < CONFIG.SIZE * CONFIG.SIZE; i++){
+    const b = document.createElement('button');
+    b.className = 'value-btn';
+    b.textContent = current;
+    b.dataset.value = current;
+    buttonsContainer.appendChild(b);
+    valueButtons.push(b);
+    current *= 2;
+  }
+
+  // current selection
+  let selectedValue = null;
+
+  function clearSelection(){
+    selectedValue = null;
+    valueButtons.forEach(b=>b.classList.remove('selected'));
+  }
+
+  // click on picker cell
+  cellEls.forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
+      if(grid[r][c] === 0){
+        // empty, place if value selected
+        if(selectedValue !== null){
+          addTileAt(r,c,selectedValue);
+          el.textContent = selectedValue;
+          el.classList.remove('empty');
+          el.classList.add('t-' + selectedValue);
+          clearSelection();
+        }
+      } else {
+        // occupied, remove
+        const oldVal = grid[r][c];
+        grid[r][c] = 0;
+        el.textContent = '';
+        el.classList.remove('t-' + oldVal);
+        el.classList.add('empty');
+      }
+    });
+  });
+
+  // value buttons
+  valueButtons.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const v = parseInt(b.dataset.value);
+      if(selectedValue === v){
+        clearSelection();
+      } else {
+        valueButtons.forEach(bb=>bb.classList.remove('selected'));
+        selectedValue = v;
+        b.classList.add('selected');
+      }
+    });
+  });
+
+  // done button
+  const doneBtn = document.createElement('button');
+  doneBtn.textContent = 'Terminé';
+  doneBtn.onclick = ()=>{
+    overlay.remove();
+    saveState();
+    render();
+  };
+
+  panel.appendChild(pickerGrid);
+  panel.appendChild(valuesDiv);
+  panel.appendChild(doneBtn);
+
+  overlay.appendChild(title);
+  overlay.appendChild(panel);
+  boardEl.appendChild(overlay);
+}
+
 // NEW GAME
 async function newGame(){
   resetGrid(); score = 0; best = Number(localStorage.getItem('best2048')||0);
@@ -536,6 +656,8 @@ boardEl.addEventListener('touchend', async (e)=>{
 });
 
 newBtn.addEventListener('click', ()=>{ showConfigPopup(); });
+
+editBtn.addEventListener('click', ()=>{ showEditMode(); });
 
 // Reset button
 resetBtn.addEventListener('click', ()=>{

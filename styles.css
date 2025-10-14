@@ -48,6 +48,7 @@ button:hover{filter:brightness(1.05)}
 .overlay p{margin:8px 0;font-size:18px}
 .placement-panel{display:flex;gap:12px;align-items:flex-start}
 .placement-values{display:flex;flex-direction:column;gap:8px}
+.value-buttons-container{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
 .value-btn{padding:8px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:700}
 .value-btn.selected{background:#a0865a; color:white; outline:3px solid #8f7a66}
 
@@ -62,8 +63,8 @@ button#reset {margin-top: 100px;margin-left:12px;background:#d9534f;border:none;
 button#reset:hover{filter:brightness(1.05)}
 
 .picker-grid{display:grid;grid-template-columns:repeat(var(--size), 48px);grid-gap:6px}
-.picker-cell{width:48px;height:48px;background:#e7e0d6;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.picker-cell.empty{background:#fff}
+.picker-cell{width:48px;height:48px;background:var(--cell-bg);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
+.picker-cell.empty{background:var(--cell-bg)}
 .picker-cell.selected{outline:3px solid #8f7a66}
 .picker-cell.drag-over{outline:3px solid #4CAF50}
 
