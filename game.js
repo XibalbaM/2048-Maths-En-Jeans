@@ -29,7 +29,11 @@ document.documentElement.style.setProperty('--size', CONFIG.SIZE);
 
 // helpers
 function copyGrid(g){ return g.map(row => row.slice()); }
-function resetGrid(){ grid = Array.from({length:CONFIG.SIZE}, ()=>Array.from({length:CONFIG.SIZE}, ()=>0)); }
+function resetGrid(){
+  grid = Array.from({length:CONFIG.SIZE}, ()=>Array.from({length:CONFIG.SIZE}, ()=>0));
+  // Also update CSS variable for grid size
+  document.documentElement.style.setProperty('--size', CONFIG.SIZE);
+}
 
 function loadConfig(){
   try{
@@ -38,6 +42,10 @@ function loadConfig(){
       const parsed = JSON.parse(stored);
       if(parsed.tileValues) CONFIG.TILE_VALUES = parsed.tileValues;
       if(parsed.secondPlayerEnabled !== undefined) CONFIG.SECOND_PLAYER_ENABLED = parsed.secondPlayerEnabled;
+      if(parsed.size && typeof parsed.size === 'number') {
+        CONFIG.SIZE = parsed.size;
+        document.documentElement.style.setProperty('--size', CONFIG.SIZE);
+      }
     }
   }catch(e){}
 }
@@ -206,6 +214,16 @@ function showConfigPopup(){
   title.textContent = 'Configuration de la nouvelle partie';
   const form = document.createElement('div');
   form.className = 'config-form';
+  // Grid size
+  const sizeLabel = document.createElement('label');
+  sizeLabel.textContent = 'Taille de la grille (2-8): ';
+  const sizeInput = document.createElement('input');
+  sizeInput.type = 'number';
+  sizeInput.min = 2;
+  sizeInput.max = 8;
+  sizeInput.value = CONFIG.SIZE;
+  sizeLabel.appendChild(sizeInput);
+  form.appendChild(sizeLabel);
   // Tile values
   const tileLabel = document.createElement('label');
   tileLabel.textContent = 'Valeurs des tuiles (séparées par des virgules): ';
@@ -232,19 +250,24 @@ function showConfigPopup(){
   startBtn.textContent = 'Démarrer';
   startBtn.onclick = () => {
     // Parse
+    let size = parseInt(sizeInput.value);
+    if(isNaN(size) || size < 2) size = 2;
+    if(size > 8) size = 8;
     const tileStr = tileInput.value.trim();
-    const tileValues = tileStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+    let tileValues = tileStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
     if(tileValues.length === 0) tileValues = [2,4];
     const secondPlayer = playerCheckbox.checked;
     // Save
-    const config = { tileValues, secondPlayerEnabled: secondPlayer };
+    const config = { tileValues, secondPlayerEnabled: secondPlayer, size };
     localStorage.setItem('gameConfig', JSON.stringify(config));
     // Update CONFIG
     CONFIG.TILE_VALUES = tileValues;
     CONFIG.SECOND_PLAYER_ENABLED = secondPlayer;
-    // Start new game
+    CONFIG.SIZE = size;
+    document.documentElement.style.setProperty('--size', CONFIG.SIZE);
+    // Start new game, force reset
     overlay.remove();
-    newGame();
+    newGame(true); // pass true to force reset
   };
   btnContainer.appendChild(cancelBtn);
   btnContainer.appendChild(startBtn);
@@ -480,6 +503,7 @@ async function newGame(){
     addRandomTile(); addRandomTile();
     saveState(); render();
   }
+  location.reload();
 }
 
 // Keyboard & touch
