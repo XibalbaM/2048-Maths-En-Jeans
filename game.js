@@ -189,13 +189,6 @@ function render(){
       requestAnimationFrame(()=>{ tile.classList.add('show'); });
     }
   }
-
-  // win/lose
-  if(grid.some(row=>row.some(v=>v===2048))){
-    showOverlay('Bravo — vous avez atteint 2048 !', 'Continuer', ()=>{});
-  } else if(!canMove(grid)){
-    showOverlay('Partie terminée — plus de mouvements', 'Nouvelle partie', ()=>{ newGame(); });
-  }
 }
 
 function showOverlay(text, btnText, btnCallback){
