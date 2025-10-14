@@ -534,7 +534,7 @@ function showEditMode(){
   valuesDiv.appendChild(buttonsContainer);
   const valueButtons = [];
   let current = 2;
-  for(let i = 0; i < CONFIG.SIZE * CONFIG.SIZE; i++){
+  for(let i = 0; i <= CONFIG.SIZE * CONFIG.SIZE; i++){
     const b = document.createElement('button');
     b.className = 'value-btn';
     b.textContent = current;
