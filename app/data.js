@@ -5,8 +5,7 @@
   const DEFAULT_STORAGE_KEY = 'local2048_v2';
   const KEYS = {
     game: DEFAULT_STORAGE_KEY,
-    config: 'gameConfig',
-    best: 'best2048'
+    config: 'gameConfig'
   };
 
   const DataStore = {
@@ -25,16 +24,6 @@
         if(obj && obj.grid) return obj;
         return null;
       }catch(e){ console.warn('loadGame failed', e); return null; }
-    },
-
-    // Best score getters/setters
-    getBest(){
-      try{ return Number(localStorage.getItem(KEYS.best) || 0); }
-      catch(e){ return 0; }
-    },
-    setBest(value){
-      try{ localStorage.setItem(KEYS.best, Number(value)||0); }
-      catch(e){ /* ignore */ }
     },
 
     // Config persistence: { tileValues, secondPlayerEnabled, size }
