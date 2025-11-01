@@ -66,19 +66,41 @@ function rotate(g, times=1){
 }
 
 function moveLeftOnce(g){
+  // Re-implementation to also produce movement mapping for animations
   let moved = false; let mergedScore = 0;
   const out = Array.from({length:CONFIG.SIZE}, ()=>Array(CONFIG.SIZE).fill(0));
+  const moves = []; // {fromR,fromC,toR,toC,value,merged:false|true,newValue?}
+  const mergedDestinations = []; // [{r,c,newValue}]
+
   for(let r=0;r<CONFIG.SIZE;r++){
-    let pos = 0;
+    // collect non-zero tiles with original columns
+    const entries = [];
     for(let c=0;c<CONFIG.SIZE;c++){
-      const val = g[r][c];
-      if(val===0) continue;
-      if(out[r][pos]===0) { out[r][pos]=val; if(c!==pos) moved = true; }
-      else if(out[r][pos]===val){ out[r][pos]*=2; mergedScore += out[r][pos]; out[r][pos+1]=0; pos++; moved=true; }
-      else { pos++; out[r][pos]=val; if(c!==pos) moved = true; }
+      const v = g[r][c];
+      if(v!==0) entries.push({c, val:v});
+    }
+    let pos = 0; // destination column
+    for(let i=0;i<entries.length;){
+      const cur = entries[i];
+      if(i+1 < entries.length && entries[i+1].val === cur.val){
+        const mergeVal = cur.val * 2;
+        out[r][pos] = mergeVal;
+        mergedScore += mergeVal;
+        // two tiles move/merge into the same destination
+        moves.push({fromR:r, fromC:cur.c, toR:r, toC:pos, value:cur.val, merged:true, newValue:mergeVal});
+        moves.push({fromR:r, fromC:entries[i+1].c, toR:r, toC:pos, value:entries[i+1].val, merged:true, newValue:mergeVal});
+        mergedDestinations.push({r, c:pos, newValue:mergeVal});
+        if(cur.c !== pos || entries[i+1].c !== pos) moved = true;
+        i += 2; pos += 1;
+      } else {
+        out[r][pos] = cur.val;
+        moves.push({fromR:r, fromC:cur.c, toR:r, toC:pos, value:cur.val, merged:false});
+        if(cur.c !== pos) moved = true;
+        i += 1; pos += 1;
+      }
     }
   }
-  return {grid:out,moved,mergedScore};
+  return {grid:out,moved,mergedScore,moves,mergedDestinations};
 }
 
 function canMove(g){
@@ -100,14 +122,80 @@ function rotatedForDirection(direction){
   return 0;
 }
 
+// Rotate a coordinate (r,c) clockwise by `times` in a CONFIG.SIZE x CONFIG.SIZE grid
+function rotateCoord(r, c, times=1){
+  let rr = r, cc = c;
+  for(let t=0;t<times;t++){
+    const nrr = cc;
+    const ncc = CONFIG.SIZE - 1 - rr;
+    rr = nrr; cc = ncc;
+  }
+  return [rr, cc];
+}
+
+// Compute top/left in px for a given cell
+function cellPositionPx(r,c){
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
+  const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+  return { top: r * (cellSize + gap), left: c * (cellSize + gap) };
+}
+
+// Animate tile movements based on move mapping (in rotated-left space)
+function animateMoves(moves, rotatedTimes){
+  // Remove any previous moving tiles
+  tileLayer.querySelectorAll('.moving-tile').forEach(el=>el.remove());
+  const inv = (4 - rotatedTimes) % 4;
+  const animEls = [];
+  moves.forEach(m => {
+    // skip tiles that don't move
+    const [fromR, fromC] = rotateCoord(m.fromR, m.fromC, inv);
+    const [toR, toC] = rotateCoord(m.toR, m.toC, inv);
+    if(fromR === toR && fromC === toC) return;
+    // hide the original static tile at its origin so we don't see duplicates
+    const baseEl = tileLayer.querySelector(`.tile[data-r="${fromR}"][data-c="${fromC}"]`);
+    if(baseEl) baseEl.style.opacity = '0';
+    const ghost = document.createElement('div');
+    ghost.className = 'tile t-' + m.value + ' moving-tile';
+    ghost.textContent = m.value;
+    const fromPx = cellPositionPx(fromR, fromC);
+    const toPx = cellPositionPx(toR, toC);
+    ghost.style.top = fromPx.top + 'px';
+    ghost.style.left = fromPx.left + 'px';
+    tileLayer.appendChild(ghost);
+    // trigger transition
+    requestAnimationFrame(()=>{
+      ghost.style.top = toPx.top + 'px';
+      ghost.style.left = toPx.left + 'px';
+    });
+    animEls.push(ghost);
+  });
+  if(animEls.length === 0) return Promise.resolve();
+  // Wait for all transitions to finish (fallback timeout)
+  return new Promise(resolve => {
+    let remaining = animEls.length;
+    const done = ()=>{ if(--remaining <= 0) resolve(); };
+    const timeout = setTimeout(()=>{ resolve(); }, 200);
+    animEls.forEach(el => {
+      el.addEventListener('transitionend', ()=>{
+        el.remove();
+        done();
+      }, { once:true });
+    });
+  });
+}
+
 // Core move function now async because after a move we may wait for player 2
 async function move(direction){
   // prevent moving while player 2 is placing
   if(turn === 'place') return false;
   const rotatedTimes = rotatedForDirection(direction);
-  let working = rotate(grid, rotatedTimes);
+  const prev = grid;
+  let working = rotate(prev, rotatedTimes);
   const result = moveLeftOnce(working);
   if(!result.moved) return false;
+  // animate movements in original orientation before committing state
+  await animateMoves(result.moves, rotatedTimes);
+  // commit new state
   working = result.grid;
   working = rotate(working, (4-rotatedTimes)%4);
   grid = working;
@@ -123,6 +211,15 @@ async function move(direction){
   }
   DataStore.saveGame({grid,score}, CONFIG.STORAGE_KEY);
   render();
+  // apply merge pop animation on merged destinations
+  if(result.mergedDestinations && result.mergedDestinations.length){
+    const inv = (4 - rotatedTimes) % 4;
+    result.mergedDestinations.forEach(({r,c})=>{
+      const [rr,cc] = rotateCoord(r,c, inv);
+      const el = tileLayer.querySelector(`.tile[data-r="${rr}"][data-c="${cc}"]`);
+      if(el) el.classList.add('merged');
+    });
+  }
   return true;
 }
 
@@ -150,6 +247,7 @@ function render(){
       const tile = document.createElement('div');
       tile.className = 'tile t-' + val;
       tile.textContent = val;
+      tile.dataset.r = r; tile.dataset.c = c;
       const topPx = r * (cellSize + gap);
       const leftPx = c * (cellSize + gap);
       tile.style.top = topPx + 'px';
