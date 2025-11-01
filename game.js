@@ -258,16 +258,6 @@ function render(){
   }
 }
 
-function showOverlay(text, btnText, btnCallback){
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay';
-  const p = document.createElement('p'); p.textContent = text;
-  const btn = document.createElement('button'); btn.textContent = btnText;
-  btn.onclick = ()=>{ overlay.remove(); if(btnCallback) btnCallback(); };
-  overlay.appendChild(p); overlay.appendChild(btn);
-  boardEl.appendChild(overlay);
-}
-
 function showConfigPopup(){
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
@@ -529,12 +519,10 @@ function promptSecondPlayer(count=1){
       });
     });
 
-    // cancel button (allows undoing placement sequence)
     const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Annuler';
+    cancelBtn.textContent = 'Passer';
     cancelBtn.onclick = ()=>{
       overlay.remove();
-      // restore move turn even if cancelled
       turn = 'move';
       resolve();
     };
