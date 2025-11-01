@@ -1,54 +1,67 @@
-/* Centralized data storage for 2048 game (config, game state, best score) */
-(function(global){
-  'use strict';
+import State from './state.js';
 
-  const DEFAULT_STORAGE_KEY = 'local2048_v2';
-  const KEYS = {
-    game: DEFAULT_STORAGE_KEY,
-    config: 'gameConfig'
-  };
+const DEFAULT_STORAGE_KEY = 'local2048_v2';
+const KEYS = {
+  game: DEFAULT_STORAGE_KEY,
+  config: 'gameConfig'
+};
 
-  const DataStore = {
-    // Game state: { grid, score, best }
-    saveGame(state, storageKey = DEFAULT_STORAGE_KEY){
-      try{
-        localStorage.setItem(storageKey, JSON.stringify(state));
-        return true;
-      }catch(e){ console.warn('saveGame failed', e); return false; }
-    },
-    loadGame(storageKey = DEFAULT_STORAGE_KEY){
-      try{
-        const raw = localStorage.getItem(storageKey);
-        if(!raw) return null;
-        const obj = JSON.parse(raw);
-        if(obj && obj.grid) return obj;
-        return null;
-      }catch(e){ console.warn('loadGame failed', e); return null; }
-    },
+/**
+ * DataStore class for persisting game state and configuration to localStorage
+ */
+export default class DataStore {
+  /**
+   * Save the current game state to localStorage
+   * @returns {void}
+   */
+  static saveGame(){
+    try{
+      localStorage.setItem(DEFAULT_STORAGE_KEY, JSON.stringify(State.game));
+    }catch(e){ console.warn('saveGame failed', e); }
+  }
+  
+  /**
+   * Load game state from localStorage
+   * @returns {void}
+   */
+  static loadGame(){
+    try{
+      const raw = localStorage.getItem(DEFAULT_STORAGE_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(obj && obj.grid) State.game = obj;
+    } catch(e) { 
+      console.warn('loadGame failed', e);
+    }
+  }
 
-    // Config persistence: { tileValues, secondPlayerEnabled, size }
-    getConfig(){
-      try{
-        const raw = localStorage.getItem(KEYS.config);
-        return raw ? JSON.parse(raw) : null;
-      }catch(e){ console.warn('getConfig failed', e); return null; }
-    },
-    setConfig(cfg){
-      try{
-        localStorage.setItem(KEYS.config, JSON.stringify(cfg));
-        return true;
-      }catch(e){ console.warn('setConfig failed', e); return false; }
-    },
+  /**
+   * Load configuration from localStorage
+   * @returns {void}
+   */
+  static loadConfig(){
+    try{
+      const raw = localStorage.getItem(KEYS.config);
+      if (raw) State.config = JSON.parse(raw);
+    }catch(e){ console.warn('getConfig failed', e); }
+  }
+  
+  /**
+   * Save configuration to localStorage
+   * @returns {void}
+   */
+  static saveConfig(){
+    try{
+      localStorage.setItem(KEYS.config, JSON.stringify(State.config));
+    }catch(e){ console.warn('setConfig failed', e); }
+  }
 
-    // Danger: clears all localStorage for this origin
-    clearAll(){
-      try{ localStorage.clear(); }
-      catch(e){ /* ignore */ }
-    },
-
-    // Expose keys for reference if needed
-    keys: KEYS
-  };
-
-  global.DataStore = DataStore;
-})(window);
+  /**
+   * Clear all localStorage data
+   * @returns {void}
+   */
+  static clearAll(){
+    try{ localStorage.clear(); }
+    catch(e){ /* ignore */ }
+  }
+};
