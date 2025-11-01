@@ -36,33 +36,7 @@ function resetGrid(){
   document.documentElement.style.setProperty('--size', CONFIG.SIZE);
 }
 
-function loadConfig(){
-  try{
-    const stored = localStorage.getItem('gameConfig');
-    if(stored){
-      const parsed = JSON.parse(stored);
-      if(parsed.tileValues) CONFIG.TILE_VALUES = parsed.tileValues;
-      if(parsed.secondPlayerEnabled !== undefined) CONFIG.SECOND_PLAYER_ENABLED = parsed.secondPlayerEnabled;
-      if(parsed.size && typeof parsed.size === 'number') {
-        CONFIG.SIZE = parsed.size;
-        document.documentElement.style.setProperty('--size', CONFIG.SIZE);
-      }
-    }
-  }catch(e){}
-}
-
-function saveState(){
-  localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({grid,score,best}));
-}
-function loadState(){
-  try{
-    const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
-    if(!raw) return false;
-    const obj = JSON.parse(raw);
-    if(obj && obj.grid) { grid = obj.grid; score = obj.score || 0; best = obj.best || 0; return true }
-  }catch(e){console.warn(e)}
-  return false;
-}
+// Persistence helpers moved to app/data.js (global DataStore)
 
 // Basic tile setter (modulaire)
 function addTileAt(r,c,value){
@@ -141,7 +115,7 @@ async function move(direction){
   grid = working;
   score += result.mergedScore;
   if(score > best) best = score;
-  saveState();
+  DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
 
   // After player 1 move: ask player 2 to place (unless disabled)
   if(CONFIG.SECOND_PLAYER_ENABLED){
@@ -150,7 +124,7 @@ async function move(direction){
   } else {
     addRandomTile();
   }
-  saveState();
+  DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
   render();
   return true;
 }
@@ -159,7 +133,7 @@ async function move(direction){
 function render(){
   scoreEl.textContent = score;
   bestEl.textContent = best;
-  localStorage.setItem('best2048', best);
+  DataStore.setBest(best);
   // grid visuals
   gridEl.innerHTML = '';
   for(let r=0;r<CONFIG.SIZE;r++){
@@ -252,8 +226,8 @@ function showConfigPopup(){
     if(tileValues.length === 0) tileValues = [2,4];
     const secondPlayer = playerCheckbox.checked;
     // Save
-    const config = { tileValues, secondPlayerEnabled: secondPlayer, size };
-    localStorage.setItem('gameConfig', JSON.stringify(config));
+  const config = { tileValues, secondPlayerEnabled: secondPlayer, size };
+  DataStore.setConfig(config);
     // Update CONFIG
     CONFIG.TILE_VALUES = tileValues;
     CONFIG.SECOND_PLAYER_ENABLED = secondPlayer;
@@ -261,7 +235,7 @@ function showConfigPopup(){
     document.documentElement.style.setProperty('--size', CONFIG.SIZE);
     // Start new game, force reset
     overlay.remove();
-    newGame(true); // pass true to force reset
+    newGame();
   };
   btnContainer.appendChild(cancelBtn);
   btnContainer.appendChild(startBtn);
@@ -588,7 +562,7 @@ function showEditMode(){
   doneBtn.textContent = 'Terminé';
   doneBtn.onclick = ()=>{
     overlay.remove();
-    saveState();
+    DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
     render();
   };
 
@@ -603,18 +577,18 @@ function showEditMode(){
 
 // NEW GAME
 async function newGame(){
-  resetGrid(); score = 0; best = Number(localStorage.getItem('best2048')||0);
+  resetGrid(); score = 0; best = DataStore.getBest();
   // default to player 1 move turn
   turn = 'move';
-  saveState();
+  DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
   render();
   if(CONFIG.SECOND_PLAYER_ENABLED){
     await promptSecondPlayer(CONFIG.INITIAL_PLACEMENTS);
-    saveState();
+    DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
     render();
   } else {
     addRandomTile(); addRandomTile();
-    saveState(); render();
+    DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY); render();
   }
   location.reload();
 }
@@ -629,7 +603,7 @@ window.addEventListener('keydown', async (e)=>{
   if(key === 'ArrowUp' || key==='w' || key==='W' || key==='z' || key==='Z') moved = await move('up');
   if(key === 'ArrowDown' || key==='s' || key==='S') moved = await move('down');
 
-  if(moved) saveState();
+  if(moved) DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
 });
 
 // touch swipe support
@@ -643,7 +617,7 @@ boardEl.addEventListener('touchend', async (e)=>{
   if(Math.max(absX,absY) > 20){
     if(absX > absY){ if(dx>0) await move('right'); else await move('left'); }
     else { if(dy>0) await move('down'); else await move('up'); }
-    saveState();
+    DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
   }
   touchStartX=0; touchStartY=0;
 });
@@ -655,7 +629,7 @@ editBtn.addEventListener('click', ()=>{ showEditMode(); });
 // Reset button
 resetBtn.addEventListener('click', ()=>{
   if(confirm('Êtes-vous sûr de vouloir réinitialiser tout le stockage local ? Cela effacera la sauvegarde de la partie, le meilleur score et les configurations.')){
-    localStorage.clear();
+    DataStore.clearAll();
     location.reload(); // Reload to reset everything
   }
 });
@@ -663,10 +637,23 @@ resetBtn.addEventListener('click', ()=>{
 // Init
 async function init(){
   document.documentElement.style.setProperty('--size', CONFIG.SIZE);
-  loadConfig();
-  if(!loadState()){
-    resetGrid(); score = 0; best = Number(localStorage.getItem('best2048')||0);
-    saveState();
+  // Load and apply persisted config (if any)
+  const storedCfg = DataStore.getConfig();
+  if(storedCfg){
+    if(storedCfg.tileValues) CONFIG.TILE_VALUES = storedCfg.tileValues;
+    if(storedCfg.secondPlayerEnabled !== undefined) CONFIG.SECOND_PLAYER_ENABLED = storedCfg.secondPlayerEnabled;
+    if(storedCfg.size && typeof storedCfg.size === 'number'){
+      CONFIG.SIZE = storedCfg.size;
+      document.documentElement.style.setProperty('--size', CONFIG.SIZE);
+    }
+  }
+  // Load game state or initialize
+  const loaded = DataStore.loadGame(CONFIG.STORAGE_KEY);
+  if(loaded && loaded.grid){
+    grid = loaded.grid; score = loaded.score || 0; best = loaded.best || 0;
+  } else {
+    resetGrid(); score = 0; best = DataStore.getBest();
+    DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY);
   }
   // ensure turn starts as move; promptSecondPlayer will set to 'move' again after placements
   turn = 'move';
@@ -676,9 +663,9 @@ async function init(){
   if(isEmpty){
     if(CONFIG.SECOND_PLAYER_ENABLED){
       await promptSecondPlayer(CONFIG.INITIAL_PLACEMENTS);
-      saveState(); render();
+      DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY); render();
     } else {
-      addRandomTile(); addRandomTile(); saveState(); render();
+      addRandomTile(); addRandomTile(); DataStore.saveGame({grid,score,best}, CONFIG.STORAGE_KEY); render();
     }
   }
 }
