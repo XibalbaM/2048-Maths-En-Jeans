@@ -3,6 +3,7 @@ import { showConfigPopup } from './interfaces/views/config.js';
 import { showEditMode } from './interfaces/views/edit.js';
 import { newBtn, editBtn, resetBtn, boardEl } from './interfaces/elements.js';
 import DataStore from './data.js';
+import State from './state.js';
 
 // Keyboard & touch
 window.addEventListener('keydown', async (e) => {
@@ -33,9 +34,9 @@ boardEl.addEventListener('touchend', async (e) => {
     touchStartX = 0; touchStartY = 0;
 });
 
-newBtn.addEventListener('click', () => { showConfigPopup(newGame); });
+newBtn.addEventListener('click', () => { if (State.game.turn === 'move') showConfigPopup(newGame); });
 
-editBtn.addEventListener('click', () => { showEditMode(); });
+editBtn.addEventListener('click', () => { if (State.game.turn === 'move') showEditMode(); });
 
 // Reset button
 resetBtn.addEventListener('click', () => {
