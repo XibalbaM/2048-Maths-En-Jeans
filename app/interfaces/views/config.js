@@ -1,6 +1,7 @@
 import State from '../../state.js';
 import DataStore from '../../data.js';
 import { boardEl } from '../elements.js';
+import { firstPlayerStrategies, secondPlayerStrategies } from '../../strategies/list.js';
 
 /**
  * Show configuration popup for starting a new game
@@ -22,7 +23,7 @@ export function showConfigPopup(onSubmit) {
     sizeInput.type = 'number';
     sizeInput.min = String(2);
     sizeInput.max = String(8);
-    sizeInput.value = String(State.config.SIZE);
+    sizeInput.value = String(State.config.size);
     sizeLabel.appendChild(sizeInput);
     form.appendChild(sizeLabel);
     // Tile values
@@ -30,17 +31,57 @@ export function showConfigPopup(onSubmit) {
     tileLabel.textContent = 'Valeurs des tuiles (séparées par des virgules): ';
     const tileInput = document.createElement('input');
     tileInput.type = 'text';
-    tileInput.value = State.config.TILE_VALUES.join(',');
+    tileInput.value = State.config.tileValues.join(',');
     tileLabel.appendChild(tileInput);
     form.appendChild(tileLabel);
-    // Two player
-    const playerLabel = document.createElement('label');
-    const playerCheckbox = document.createElement('input');
-    playerCheckbox.type = 'checkbox';
-    playerCheckbox.checked = State.config.SECOND_PLAYER_ENABLED;
-    playerLabel.appendChild(playerCheckbox);
-    playerLabel.appendChild(document.createTextNode(' Mode deux joueurs'));
-    form.appendChild(playerLabel);
+    // Player 1 strategy select
+    const p1Label = document.createElement('label');
+    p1Label.textContent = 'Stratégie Joueur 1: ';
+    const p1Select = document.createElement('select');
+    // None option
+    const p1None = document.createElement('option');
+    p1None.value = '';
+    p1None.textContent = 'Aucune';
+    p1Select.appendChild(p1None);
+    // Fill from list
+    firstPlayerStrategies.forEach((s)=>{
+        if (s.name === "Fichier" && State.config.loadedHistory.length === 0) return;
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = s.name;
+        p1Select.appendChild(opt);
+    });
+    // Preselect current
+    if (State.config.firstPlayerStrategy) {
+        p1Select.value = State.config.firstPlayerStrategy.name;
+    } else {
+        p1Select.value = '';
+    }
+    p1Label.appendChild(p1Select);
+    form.appendChild(p1Label);
+
+    // Player 2 strategy select
+    const p2Label = document.createElement('label');
+    p2Label.textContent = 'Stratégie Joueur 2: ';
+    const p2Select = document.createElement('select');
+    const p2None = document.createElement('option');
+    p2None.value = '';
+    p2None.textContent = 'Aucune';
+    p2Select.appendChild(p2None);
+    secondPlayerStrategies.forEach((s)=>{
+        if (s.name === "Fichier" && State.config.loadedHistory.length === 0) return;
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = s.name;
+        p2Select.appendChild(opt);
+    });
+    if (State.config.secondPlayerStrategy) {
+        p2Select.value = State.config.secondPlayerStrategy.name;
+    } else {
+        p2Select.value = '';
+    }
+    p2Label.appendChild(p2Select);
+    form.appendChild(p2Label);
     // Buttons
     const btnContainer = document.createElement('div');
     btnContainer.className = 'config-buttons';
@@ -57,14 +98,19 @@ export function showConfigPopup(onSubmit) {
         const tileStr = tileInput.value.trim();
         let tileValues = tileStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
         if (tileValues.length === 0) tileValues = [2, 4];
-        const secondPlayer = playerCheckbox.checked;
+        // Strategy selections
+        const p1Name = p1Select.value;
+        const p2Name = p2Select.value;
+        const p1 = firstPlayerStrategies.find(s => s.name === p1Name);
+        const p2 = secondPlayerStrategies.find(s => s.name === p2Name);
+        // Update State.config
+        State.config.tileValues = tileValues;
+        State.config.size = size;
+        State.config.firstPlayerStrategy = p1Name ? p1 : undefined;
+        State.config.secondPlayerStrategy = p2Name ? p2 : undefined;
+        document.documentElement.style.setProperty('--size', String(State.config.size));
         // Save
         DataStore.saveConfig();
-        // Update State.config
-        State.config.TILE_VALUES = tileValues;
-        State.config.SECOND_PLAYER_ENABLED = secondPlayer;
-        State.config.SIZE = size;
-        document.documentElement.style.setProperty('--size', String(State.config.SIZE));
         // Start new game, force reset
         overlay.remove();
         onSubmit();

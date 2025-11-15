@@ -10,13 +10,13 @@ import { render } from '../rendering.js';
  * @param {number[]} allowedValues - Allowed tile values for placement
  * @param {boolean} allowRemove - Whether removing tiles is allowed
  * @param {string} closeText - Text for the close button
- * @param {Function} closeCallback - Optional callback on close
- * @param {Function} doneCallback - Optional callback on done
- * @returns {Promise<void>} Promise that resolves when placement is complete
+ * @param {(actions: GameAction[]) => void} closeCallback - Optional callback on close
+ * @param {(actions: GameAction[]) => void} doneCallback - Optional callback on done
+ * @returns {Promise<GameAction[]>} Promise that resolves when placement is complete
  */
 export async function abstractEdit(count, titleText, allowedValues, allowRemove, closeText, closeCallback, doneCallback) {
-    console.log('abstractEdit', count, titleText, allowedValues, closeText);
     return new Promise((resolve) => {
+        const actions = [];
         // create overlay with a small picker
         const overlay = document.createElement('div');
         overlay.className = 'overlay';
@@ -30,17 +30,17 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
         // picker grid
         const pickerGrid = document.createElement('div');
         pickerGrid.className = 'picker-grid';
-        pickerGrid.style.setProperty('--size', String(State.config.SIZE));
+        pickerGrid.style.setProperty('--size', String(State.config.size));
 
         // collect empties
         const empties = [];
-        for (let r = 0; r < State.config.SIZE; r++) for (let c = 0; c < State.config.SIZE; c++) if (State.game.grid[r][c] === 0) empties.push([r, c]);
+        for (let r = 0; r < State.config.size; r++) for (let c = 0; c < State.config.size; c++) if (State.game.grid[r][c] === 0) empties.push([r, c]);
 
         // build cells (clickable)
         /** @type {HTMLElement[]} */
         const cellEls = [];
-        for (let r = 0; r < State.config.SIZE; r++) {
-            for (let c = 0; c < State.config.SIZE; c++) {
+        for (let r = 0; r < State.config.size; r++) {
+            for (let c = 0; c < State.config.size; c++) {
                 const el = document.createElement('div');
                 el.className = 'picker-cell';
                 if (State.game.grid[r][c] === 0) { el.classList.add('empty'); el.textContent = ''; }
@@ -104,10 +104,11 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
                     if (State.game.grid[rr][cc] === 0) { cell.classList.add('empty'); cell.textContent = ''; }
                     else { cell.classList.remove('empty'); cell.textContent = State.game.grid[rr][cc].toString(); }
                 });
+                actions.push({ type: 'place', r, c, value: v });// log action
                 if (placementsLeft == 0) {
                     overlay.remove();
-                    doneCallback();
-                    resolve();
+                    doneCallback(actions);
+                    resolve(actions);
                 } else {
                     title.textContent = replaceCount(titleText, placementsLeft);
                 }
@@ -126,6 +127,7 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
                         el.textContent = '';
                         el.classList.remove('t-' + oldVal);
                         el.classList.add('empty');
+                        actions.push({ type: 'delete', r, c });// log action
                     }
                     return;
                 }
@@ -189,8 +191,8 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
         cancelBtn.textContent = replaceCount(closeText, placementsLeft);
         cancelBtn.onclick = () => {
             overlay.remove();
-            closeCallback();
-            resolve();
+            closeCallback(actions);
+            resolve(actions);
         };
 
         panel.appendChild(pickerGrid);

@@ -1,19 +1,27 @@
 /// <reference path="../types.d.ts" />
 
 /** @type {GameState} */
-const game = {
+let game = {
     grid: [],
     score: 0,
     turn: 'move',
+    history: [],
+    turnNumber: 0,
 };
 
 /** @type {GameConfig} */
-const config = {
-    SIZE: 4,
-    STORAGE_KEY: 'local2048_v2',
-    TILE_VALUES: [2, 4],
-    SECOND_PLAYER_ENABLED: true,
-    INITIAL_PLACEMENTS: 2
+let config = {
+    size: 4,
+    storageKey: 'local2048_v2',
+    tileValues: [2, 4],
+    firstPlayerStrategy: undefined,
+    secondPlayerStrategy: undefined,
+    initialPlacementsCount: 2,
+    loadedHistory: []
+};
+
+let tempStorage = {
+    isProcessing: false
 };
 
 /**
@@ -21,13 +29,19 @@ const config = {
  * @returns {void}
  */
 function resetGame() {
-    game.grid = [];
+    game.grid = Array.from({ length: config.size }, () => Array(config.size).fill(0));
     game.score = 0;
     game.turn = 'move';
+    game.history = [];
+    game.turnNumber = 0;
 }
 
 export default {
-    game,
-    config,
+    get game() { return game; },
+    set game(v) { game = v; },
+    get config() { return config; },
+    set config(v) { config = v; },
+    get tempStorage() { return tempStorage; },
+    set tempStorage(v) { tempStorage = v; },
     resetGame
 };

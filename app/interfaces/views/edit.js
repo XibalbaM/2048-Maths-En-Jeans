@@ -7,16 +7,18 @@ import { abstractEdit } from './abstract_edit.js';
 
 /**
  * Show edit mode UI for manually placing/removing tiles
- * @returns {Promise<void>} Promise that resolves when edit mode is exited
+ * @returns {Promise<GameAction[]>} Promise that resolves when edit mode is exited
  */
 export function showEditMode() {
     const allowedValues = [];
     let current = 2;
-    for (let i = 0; i <= State.config.SIZE * State.config.SIZE; i++) {
+    for (let i = 0; i <= State.config.size * State.config.size; i++) {
         allowedValues.push(current);
         current *= 2;
     }
-    function callback() {
+    function callback(actions) {
+        State.game.history = [...State.game.history, ...actions];
+        State.game.turnNumber =+ actions.size;
         DataStore.saveGame();
         render();
     }

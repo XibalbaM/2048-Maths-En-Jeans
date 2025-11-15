@@ -10,8 +10,8 @@ export function render() {
     // grid visuals
     if (!gridEl) return;
     gridEl.innerHTML = '';
-    for (let r = 0; r < State.config.SIZE; r++) {
-        for (let c = 0; c < State.config.SIZE; c++) {
+    for (let r = 0; r < State.config.size; r++) {
+        for (let c = 0; c < State.config.size; c++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             gridEl.appendChild(cell);
@@ -23,8 +23,8 @@ export function render() {
     tileLayer.innerHTML = '';
     const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
     const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
-    for (let r = 0; r < State.config.SIZE; r++) {
-        for (let c = 0; c < State.config.SIZE; c++) {
+    for (let r = 0; r < State.config.size; r++) {
+        for (let c = 0; c < State.config.size; c++) {
             const val = State.game.grid[r][c];
             if (val === 0) continue;
             const tile = document.createElement('div');

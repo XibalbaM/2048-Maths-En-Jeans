@@ -17,7 +17,7 @@ function copyGrid(g) { return g.map(row => row.slice()); }
  * @returns {void}
  */
 function resetGrid() {
-    State.game.grid = Array.from({ length: State.config.SIZE }, () => Array(State.config.SIZE).fill(0));
+    State.game.grid = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
 }
 
 // Persistence helpers moved to app/data.js (global DataStore)
@@ -36,20 +36,6 @@ export function addTileAt(r, c, value) {
 }
 
 /**
- * Add a random tile (fallback when SECOND_PLAYER_ENABLED=false)
- * @returns {{r: number, c: number, value: number} | false} Tile info or false if no empty cells
- */
-function addRandomTile() {
-    const empties = [];
-    for (let r = 0; r < State.config.SIZE; r++) for (let c = 0; c < State.config.SIZE; c++) if (State.game.grid[r][c] === 0) empties.push([r, c]);
-    if (empties.length === 0) return false;
-    const [r, c] = empties[Math.floor(Math.random() * empties.length)];
-    const v = Math.random() < 0.9 ? State.config.TILE_VALUES[0] : (State.config.TILE_VALUES[1] || State.config.TILE_VALUES[0]);
-    State.game.grid[r][c] = v;
-    return { r, c, value: v };
-}
-
-/**
  * Rotate a grid clockwise by specified number of 90-degree turns
  * @param {number[][]} g - Grid to rotate
  * @param {number} [times=1] - Number of 90-degree clockwise rotations
@@ -58,8 +44,8 @@ function addRandomTile() {
 function rotate(g, times = 1) {
     let res = copyGrid(g);
     for (let t = 0; t < times; t++) {
-        const tmp = Array.from({ length: State.config.SIZE }, () => Array(State.config.SIZE).fill(0));
-        for (let r = 0; r < State.config.SIZE; r++) for (let c = 0; c < State.config.SIZE; c++) tmp[c][State.config.SIZE - 1 - r] = res[r][c];
+        const tmp = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
+        for (let r = 0; r < State.config.size; r++) for (let c = 0; c < State.config.size; c++) tmp[c][State.config.size - 1 - r] = res[r][c];
         res = tmp;
     }
     return res;
@@ -73,16 +59,16 @@ function rotate(g, times = 1) {
 function moveLeftOnce(g) {
     // Re-implementation to also produce movement mapping for animations
     let moved = false; let mergedScore = 0;
-    const out = Array.from({ length: State.config.SIZE }, () => Array(State.config.SIZE).fill(0));
+    const out = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
     /** @type {TileMove[]} */
     const moves = [];
     /** @type {MergedDestination[]} */
     const mergedDestinations = [];
 
-    for (let r = 0; r < State.config.SIZE; r++) {
+    for (let r = 0; r < State.config.size; r++) {
         // collect non-zero tiles with original columns
         const entries = [];
-        for (let c = 0; c < State.config.SIZE; c++) {
+        for (let c = 0; c < State.config.size; c++) {
             const v = g[r][c];
             if (v !== 0) entries.push({ c, val: v });
         }
@@ -111,20 +97,6 @@ function moveLeftOnce(g) {
 }
 
 /**
- * Check if any moves are possible on the grid
- * @param {number[][]} g - Grid to check
- * @returns {boolean} True if at least one move is possible
- */
-function canMove(g) {
-    for (let r = 0; r < State.config.SIZE; r++) for (let c = 0; c < State.config.SIZE; c++) {
-        if (g[r][c] === 0) return true;
-        if (c + 1 < State.config.SIZE && g[r][c] === g[r][c + 1]) return true;
-        if (r + 1 < State.config.SIZE && g[r][c] === g[r + 1][c]) return true;
-    }
-    return false;
-}
-
-/**
  * Map movement direction to number of clockwise rotations needed
  * @param {Direction} direction - Movement direction
  * @returns {number} Number of rotations (0-3)
@@ -149,7 +121,7 @@ function rotateCoord(r, c, times = 1) {
     let rr = r, cc = c;
     for (let t = 0; t < times; t++) {
         const nrr = cc;
-        const ncc = State.config.SIZE - 1 - rr;
+        const ncc = State.config.size - 1 - rr;
         rr = nrr; cc = ncc;
     }
     return [rr, cc];
@@ -162,12 +134,25 @@ function rotateCoord(r, c, times = 1) {
  */
 export async function move(direction) {
     // prevent moving while player 2 is placing
-    if (State.game.turn === 'place') return false;
+    if (State.game.turn === 'place' || State.tempStorage.isProcessing) return false;
+    State.tempStorage.isProcessing = true;
+    if (State.config.firstPlayerStrategy) {
+        const choosenMove = State.config.firstPlayerStrategy.fun(State.game);
+        if (!choosenMove) {
+            alert("Le joueur 1 n'a pas pu choisir de mouvement valide.");
+            State.tempStorage.isProcessing = false;
+            return false;
+        }
+        direction = choosenMove.direction;
+    }
     const rotatedTimes = rotatedForDirection(direction);
     const prev = State.game.grid;
     let working = rotate(prev, rotatedTimes);
     const result = moveLeftOnce(working);
-    if (!result.moved) return false;
+    if (!result.moved) {
+        State.tempStorage.isProcessing = false;
+        return false;
+    }
     const rotatedResults = restoreResults(result, rotatedTimes);
     // animate movements in original orientation before committing state
     await animateMoves(rotatedResults.moves, rotatedResults.mergedDestinations);
@@ -175,20 +160,32 @@ export async function move(direction) {
     State.game.grid = rotatedResults.grid;
     State.game.score += rotatedResults.mergedScore;
     State.game.turn = 'place';
+    State.game.history.push({ type: 'move', direction });
+    State.game.turnNumber++;
     DataStore.saveGame();
     render();
 
     await second_player();
+    State.tempStorage.isProcessing = false;
     return true;
 }
 
-async function second_player() {
-    if (State.config.SECOND_PLAYER_ENABLED) {
-        // switch to placement turn and await player 2
-        await promptSecondPlayer(1);
+async function second_player(count = 1) {
+    if (State.game.turn !== 'place') return;
+    if (!State.config.secondPlayerStrategy) {
+        let history = await promptSecondPlayer(count);
+        State.game.history = [...State.game.history, ...history];
+        State.game.turnNumber += count;
     } else {
-        addRandomTile();
+        for (let i = 0; i < count; i++) {
+            let move = applySecondPlayerStrategy();
+            if (move) {
+                State.game.history = [...State.game.history, move];
+                State.game.turnNumber++;
+            }
+        }
     }
+    State.game.turn = 'move';
     DataStore.saveGame();
     render();
 }
@@ -238,12 +235,20 @@ export async function newGame() {
     resetGrid(); State.resetGame();
     DataStore.saveGame();
     render();
-    if (State.config.SECOND_PLAYER_ENABLED) {
-        await promptSecondPlayer(State.config.INITIAL_PLACEMENTS);
-    } else {
-        addRandomTile(); addRandomTile();
+    State.game.turn = 'place';
+    await second_player(State.config.initialPlacementsCount);
+}
+
+function applySecondPlayerStrategy() {
+    if (State.config.secondPlayerStrategy) {
+        const placement = State.config.secondPlayerStrategy.fun(State.game);
+        if (!placement) {
+            alert("Le joueur 2 n'a pas pu choisir de placement valide.");
+            return null;
+        }
+        addTileAt(placement.r, placement.c, placement.value);
+        return placement;
     }
-    DataStore.saveGame(); render();
 }
 
 /**
@@ -251,15 +256,14 @@ export async function newGame() {
  * @returns {void}
  */
 function init() {
-    document.documentElement.style.setProperty('--size', String(State.config.SIZE));
-    render();
+    document.documentElement.style.setProperty('--size', String(State.config.size));
     // if empty grid and second player enabled, force initial placements
     const isEmpty = State.game.grid.every(row => row.every(v => v === 0));
     if (isEmpty) {
         newGame();
-    } else if (State.config.SECOND_PLAYER_ENABLED && State.game.turn === 'place') {
-        // resume placement turn if interrupted
-        promptSecondPlayer(1);
+    } else {
+        render();
+        second_player();
     }
 }
 

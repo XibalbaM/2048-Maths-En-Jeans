@@ -12,3 +12,7 @@ export const boardEl = document.getElementById('board');
 export const resetBtn = document.getElementById('reset');
 /** @type {HTMLElement | null} */
 export const editBtn = document.getElementById('edit');
+/** @type {HTMLElement | null} */
+export const exportBtn = document.getElementById('export');
+/** @type {HTMLElement | null} */
+export const importBtn = document.getElementById('import');

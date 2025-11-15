@@ -58,6 +58,10 @@ button:hover{filter:brightness(1.05)}
 .config-form input[type="checkbox"]{margin-right:8px}
 .config-buttons{display:flex;gap:8px;justify-content:center}
 
+#bottom_buttons{margin-top:12px;text-align:center}
+#bottom_buttons button{background:#5bc0de;border:none;color:white;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+#bottom_buttons button:hover{filter:brightness(1.05)}
+
 .footer{margin-top:12px;font-size:13px;color:#6b5b4c}
 button#reset {margin-top: 100px;margin-left:12px;background:#d9534f;border:none;color:white;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px}
 button#reset:hover{filter:brightness(1.05)}
