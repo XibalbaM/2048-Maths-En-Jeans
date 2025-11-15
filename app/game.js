@@ -174,6 +174,7 @@ export async function move(direction) {
     // commit new state
     State.game.grid = rotatedResults.grid;
     State.game.score += rotatedResults.mergedScore;
+    State.game.turn = 'place';
     DataStore.saveGame();
     render();
 
@@ -256,6 +257,9 @@ function init() {
     const isEmpty = State.game.grid.every(row => row.every(v => v === 0));
     if (isEmpty) {
         newGame();
+    } else if (State.config.SECOND_PLAYER_ENABLED && State.game.turn === 'place') {
+        // resume placement turn if interrupted
+        promptSecondPlayer(1);
     }
 }
 
