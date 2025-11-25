@@ -9,12 +9,12 @@ import State from './state.js';
 window.addEventListener('keydown', async (e) => {
     const key = e.key;
     let moved = false;
-    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) e.preventDefault();
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',' '].includes(key)) e.preventDefault();
     if (key === 'ArrowLeft' || key === 'q' || key === 'Q') moved = await move('left');
     if (key === 'ArrowRight' || key === 'd' || key === 'D') moved = await move('right');
     if (key === 'ArrowUp' || key === 'z' || key === 'Z') moved = await move('up');
     if (key === 'ArrowDown' || key === 's' || key === 'S') moved = await move('down');
-
+    if (key === ' ') moved = await move(null);
     if (moved) DataStore.saveGame();
 });
 

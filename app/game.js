@@ -133,37 +133,41 @@ function rotateCoord(r, c, times = 1) {
  * @returns {Promise<boolean>} True if movement occurred, false otherwise
  */
 export async function move(direction) {
-    // prevent moving while player 2 is placing
-    if (State.game.turn === 'place' || State.tempStorage.isProcessing) return false;
-    State.tempStorage.isProcessing = true;
-    if (State.config.firstPlayerStrategy) {
-        const choosenMove = State.config.firstPlayerStrategy.fun(State.game);
-        if (!choosenMove) {
-            alert("Le joueur 1 n'a pas pu choisir de mouvement valide.");
+    if (direction !== null) {
+        // prevent moving while player 2 is placing
+        if (State.game.turn === 'place' || State.tempStorage.isProcessing) return false;
+        State.tempStorage.isProcessing = true;
+        if (State.config.firstPlayerStrategy) {
+            const choosenMove = State.config.firstPlayerStrategy.fun(State.game);
+            if (!choosenMove) {
+                alert("Le joueur 1 n'a pas pu choisir de mouvement valide.");
+                State.tempStorage.isProcessing = false;
+                return false;
+            }
+            direction = choosenMove.direction;
+        }
+        const rotatedTimes = rotatedForDirection(direction);
+        const prev = State.game.grid;
+        let working = rotate(prev, rotatedTimes);
+        const result = moveLeftOnce(working);
+        if (!result.moved) {
             State.tempStorage.isProcessing = false;
             return false;
         }
-        direction = choosenMove.direction;
+        const rotatedResults = restoreResults(result, rotatedTimes);
+        // animate movements in original orientation before committing state
+        await animateMoves(rotatedResults.moves, rotatedResults.mergedDestinations);
+        // commit new state
+        State.game.grid = rotatedResults.grid;
+        State.game.score += rotatedResults.mergedScore;
+        State.game.turn = 'place';
+        State.game.history.push({ type: 'move', direction });
+        State.game.turnNumber++;
+        DataStore.saveGame();
+        render();
+    } else {
+        State.game.turn = 'place';
     }
-    const rotatedTimes = rotatedForDirection(direction);
-    const prev = State.game.grid;
-    let working = rotate(prev, rotatedTimes);
-    const result = moveLeftOnce(working);
-    if (!result.moved) {
-        State.tempStorage.isProcessing = false;
-        return false;
-    }
-    const rotatedResults = restoreResults(result, rotatedTimes);
-    // animate movements in original orientation before committing state
-    await animateMoves(rotatedResults.moves, rotatedResults.mergedDestinations);
-    // commit new state
-    State.game.grid = rotatedResults.grid;
-    State.game.score += rotatedResults.mergedScore;
-    State.game.turn = 'place';
-    State.game.history.push({ type: 'move', direction });
-    State.game.turnNumber++;
-    DataStore.saveGame();
-    render();
 
     await second_player();
     State.tempStorage.isProcessing = false;
