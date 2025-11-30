@@ -1,4 +1,4 @@
-import { move, newGame } from './game.js';
+import { newGame, turn } from './game.js';
 import { showConfigPopup } from './interfaces/views/config.js';
 import { showEditMode } from './interfaces/views/edit.js';
 import { newBtn, editBtn, resetBtn, boardEl, exportBtn, importBtn } from './interfaces/elements.js';
@@ -10,11 +10,11 @@ window.addEventListener('keydown', async (e) => {
     const key = e.key;
     let moved = false;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',' '].includes(key)) e.preventDefault();
-    if (key === 'ArrowLeft' || key === 'q' || key === 'Q') moved = await move('left');
-    if (key === 'ArrowRight' || key === 'd' || key === 'D') moved = await move('right');
-    if (key === 'ArrowUp' || key === 'z' || key === 'Z') moved = await move('up');
-    if (key === 'ArrowDown' || key === 's' || key === 'S') moved = await move('down');
-    if (key === ' ') moved = await move(null);
+    if (key === 'ArrowLeft' || key === 'q' || key === 'Q') moved = await turn('left');
+    if (key === 'ArrowRight' || key === 'd' || key === 'D') moved = await turn('right');
+    if (key === 'ArrowUp' || key === 'z' || key === 'Z') moved = await turn('up');
+    if (key === 'ArrowDown' || key === 's' || key === 'S') moved = await turn('down');
+    if (key === ' ') moved = await turn(null);
     if (moved) DataStore.saveGame();
 });
 
@@ -27,8 +27,8 @@ boardEl.addEventListener('touchend', async (e) => {
     const dy = (e.changedTouches[0].clientY - touchStartY);
     const absX = Math.abs(dx), absY = Math.abs(dy);
     if (Math.max(absX, absY) > 20) {
-        if (absX > absY) { if (dx > 0) await move('right'); else await move('left'); }
-        else { if (dy > 0) await move('down'); else await move('up'); }
+        if (absX > absY) { if (dx > 0) await turn('right'); else await turn('left'); }
+        else { if (dy > 0) await turn('down'); else await turn('up'); }
         DataStore.saveGame();
     }
     touchStartX = 0; touchStartY = 0;

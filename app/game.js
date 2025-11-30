@@ -127,51 +127,52 @@ function rotateCoord(r, c, times = 1) {
     return [rr, cc];
 }
 
+
 /**
  * Move tiles in the specified direction with animation
  * @param {Direction} direction - Direction to move tiles
  * @returns {Promise<boolean>} True if movement occurred, false otherwise
  */
-export async function move(direction) {
-    if (direction !== null) {
-        // prevent moving while player 2 is placing
-        if (State.game.turn === 'place' || State.tempStorage.isProcessing) return false;
-        State.tempStorage.isProcessing = true;
-        if (State.config.firstPlayerStrategy) {
-            const choosenMove = State.config.firstPlayerStrategy.fun(State.game);
-            if (!choosenMove) {
-                alert("Le joueur 1 n'a pas pu choisir de mouvement valide.");
-                State.tempStorage.isProcessing = false;
-                return false;
-            }
-            direction = choosenMove.direction;
-        }
-        const rotatedTimes = rotatedForDirection(direction);
-        const prev = State.game.grid;
-        let working = rotate(prev, rotatedTimes);
-        const result = moveLeftOnce(working);
-        if (!result.moved) {
-            State.tempStorage.isProcessing = false;
-            return false;
-        }
-        const rotatedResults = restoreResults(result, rotatedTimes);
-        // animate movements in original orientation before committing state
-        await animateMoves(rotatedResults.moves, rotatedResults.mergedDestinations);
-        // commit new state
-        State.game.grid = rotatedResults.grid;
-        State.game.score += rotatedResults.mergedScore;
-        State.game.turn = 'place';
-        State.game.history.push({ type: 'move', direction });
-        State.game.turnNumber++;
-        DataStore.saveGame();
-        render();
-    } else {
-        State.game.turn = 'place';
-    }
-
+export async function turn(direction) {
+    await move(direction);
     await second_player();
     State.tempStorage.isProcessing = false;
     return true;
+}
+async function move(direction) {
+    // prevent moving while player 2 is placing
+    if (State.game.turn === 'place' || State.tempStorage.isProcessing) return false;
+    State.tempStorage.isProcessing = true;
+    if (State.config.firstPlayerStrategy) {
+        const choosenMove = State.config.firstPlayerStrategy.fun(State.game);
+        if (!choosenMove) {
+            State.game.turn = 'place';
+            return false;
+        }
+        direction = choosenMove.direction;
+    }
+    if (direction === null) {
+        State.game.turn = 'place';
+        return true;
+    }
+    const rotatedTimes = rotatedForDirection(direction);
+    const prev = State.game.grid;
+    let working = rotate(prev, rotatedTimes);
+    const result = moveLeftOnce(working);
+    if (!result.moved) {
+        return false;
+    }
+    const rotatedResults = restoreResults(result, rotatedTimes);
+    // animate movements in original orientation before committing state
+    await animateMoves(rotatedResults.moves, rotatedResults.mergedDestinations);
+    // commit new state
+    State.game.grid = rotatedResults.grid;
+    State.game.score += rotatedResults.mergedScore;
+    State.game.turn = 'place';
+    State.game.history.push({ type: 'move', direction });
+    State.game.turnNumber++;
+    DataStore.saveGame();
+    render();
 }
 
 async function second_player(count = 1) {
@@ -247,7 +248,6 @@ function applySecondPlayerStrategy() {
     if (State.config.secondPlayerStrategy) {
         const placement = State.config.secondPlayerStrategy.fun(State.game);
         if (!placement) {
-            alert("Le joueur 2 n'a pas pu choisir de placement valide.");
             return null;
         }
         addTileAt(placement.r, placement.c, placement.value);
