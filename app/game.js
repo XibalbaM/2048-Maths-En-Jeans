@@ -133,7 +133,7 @@ export async function goBackOneTurn() {
     if (State.game.turnNumber === 0 || State.tempStorage.isProcessing) return;
     State.tempStorage.isProcessing = true;
     // revert to previous state by simulating history up to turnNumber - 1
-    const targetTurn = State.game.turnNumber - 1;
+    const targetTurn = State.game.turnNumber - (State.config.secondPlayerStrategy ? 2 : 1);
     const initialState = State.defaultGameState();
     const newState = simulate(State.game.history.slice(0, targetTurn), initialState);
     State.game.grid = newState.grid;
