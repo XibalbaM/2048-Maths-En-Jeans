@@ -11,7 +11,6 @@ export function simulate(history, initialState) {
     for (let entry of history) {
         const action = entry.action;
         const nextTurn = entry.nextTurn;
-        console.log("Simulating action:", action, "Next turn:", nextTurn);
         if (action.type === 'move') {
             const rotatedTimes = rotatedForDirection(action.direction);
             let working = rotate(finalState.grid, rotatedTimes);

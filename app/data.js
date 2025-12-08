@@ -63,7 +63,6 @@ export default class DataStore {
                     }
                 }
             }
-            console.log('Loaded config', State.config);
         } catch (e) { console.warn('getConfig failed', e); }
     }
 

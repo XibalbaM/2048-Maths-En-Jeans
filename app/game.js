@@ -132,8 +132,6 @@ function rotateCoord(r, c, times = 1) {
 export async function goBackOneTurn() {
     if (State.game.turnNumber === 0 || State.tempStorage.isProcessing) return;
     State.tempStorage.isProcessing = true;
-    console.log("Reverting one turn (back to turn", State.game.turnNumber - 1, ")");
-    console.log("Current history:", State.game.history);
     // revert to previous state by simulating history up to turnNumber - 1
     const targetTurn = State.game.turnNumber - 1;
     const initialState = State.defaultGameState();
@@ -210,7 +208,6 @@ async function second_player(count = 1) {
         // @ts-ignore
         State.game.history = [...State.game.history, ...mappedHistory];
         State.game.turnNumber += history.length;
-        console.log("Applied second player placements from prompt:", history);
     } else {
         for (let i = 0; i < count; i++) {
             let move = applySecondPlayerStrategy();
