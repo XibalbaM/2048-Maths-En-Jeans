@@ -8,9 +8,8 @@ export default {
     name: "Fichier",
     fun(state) {
         const fileData = State.config.loadedHistory[State.game.turnNumber];
-        console.log('File strategy move data:', fileData);
-        if (fileData && fileData.type === 'place' && isEmptyCell(fileData.r, fileData.c)) {
-            return fileData;
+        if (fileData && fileData.action.type === 'place' && isEmptyCell(fileData.action.r, fileData.action.c)) {
+            return fileData.action;
         }
         return null;
     }
