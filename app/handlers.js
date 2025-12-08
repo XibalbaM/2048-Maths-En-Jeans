@@ -1,4 +1,4 @@
-import { newGame, turn } from './game.js';
+import { newGame, turn, goBackOneTurn } from './game.js';
 import { showConfigPopup } from './interfaces/views/config.js';
 import { showEditMode } from './interfaces/views/edit.js';
 import { newBtn, editBtn, resetBtn, boardEl, exportBtn, importBtn } from './interfaces/elements.js';
@@ -15,6 +15,7 @@ window.addEventListener('keydown', async (e) => {
     if (key === 'ArrowUp' || key === 'z' || key === 'Z') moved = await turn('up');
     if (key === 'ArrowDown' || key === 's' || key === 'S') moved = await turn('down');
     if (key === ' ') moved = await turn(null);
+    if (key === 'Backspace') goBackOneTurn();
     if (moved) DataStore.saveGame();
 });
 

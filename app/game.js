@@ -4,6 +4,7 @@ import DataStore from './data.js';
 import { promptSecondPlayer } from './interfaces/views/second_player.js';
 import { animateMoves } from './interfaces/animations.js';
 import { render } from './interfaces/rendering.js';
+import { simulate } from './utils.js';
 
 /**
  * Create a copy of the grid
@@ -41,7 +42,7 @@ export function addTileAt(r, c, value) {
  * @param {number} [times=1] - Number of 90-degree clockwise rotations
  * @returns {number[][]} Rotated grid
  */
-function rotate(g, times = 1) {
+export function rotate(g, times = 1) {
     let res = copyGrid(g);
     for (let t = 0; t < times; t++) {
         const tmp = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
@@ -56,7 +57,7 @@ function rotate(g, times = 1) {
  * @param {number[][]} g - Grid to process
  * @returns {MoveResult} Result containing new grid, movement info, and score
  */
-function moveLeftOnce(g) {
+export function moveLeftOnce(g) {
     // Re-implementation to also produce movement mapping for animations
     let moved = false; let mergedScore = 0;
     const out = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
@@ -101,7 +102,7 @@ function moveLeftOnce(g) {
  * @param {Direction} direction - Movement direction
  * @returns {number} Number of rotations (0-3)
  */
-function rotatedForDirection(direction) {
+export function rotatedForDirection(direction) {
     // left:0, up:3, right:2, down:1  (mapping chosen so that moveLeftOnce handles left)
     if (direction === 'left') return 0;
     if (direction === 'up') return 3;
@@ -127,6 +128,28 @@ function rotateCoord(r, c, times = 1) {
     return [rr, cc];
 }
 
+
+export async function goBackOneTurn() {
+    if (State.game.turnNumber === 0 || State.tempStorage.isProcessing) return;
+    State.tempStorage.isProcessing = true;
+    console.log("Reverting one turn (back to turn", State.game.turnNumber - 1, ")");
+    console.log("Current history:", State.game.history);
+    // revert to previous state by simulating history up to turnNumber - 1
+    const targetTurn = State.game.turnNumber - 1;
+    const initialState = State.defaultGameState();
+    const newState = simulate(State.game.history.slice(0, targetTurn), initialState);
+    State.game.grid = newState.grid;
+    State.game.score = newState.score;
+    State.game.turnNumber = newState.turnNumber;
+    State.game.turn = newState.turn;
+    State.game.history = State.game.history.slice(0, targetTurn);
+    DataStore.saveGame();
+    render();
+    if (State.game.turn === 'place') {
+        await second_player();
+    }
+    State.tempStorage.isProcessing = false;
+}
 
 /**
  * Move tiles in the specified direction with animation
@@ -169,7 +192,7 @@ async function move(direction) {
     State.game.grid = rotatedResults.grid;
     State.game.score += rotatedResults.mergedScore;
     State.game.turn = 'place';
-    State.game.history.push({ type: 'move', direction });
+    State.game.history.push({action: { type: 'move', direction }, nextTurn: 'place'});
     State.game.turnNumber++;
     DataStore.saveGame();
     render();
@@ -179,13 +202,22 @@ async function second_player(count = 1) {
     if (State.game.turn !== 'place') return;
     if (!State.config.secondPlayerStrategy) {
         let history = await promptSecondPlayer(count);
-        State.game.history = [...State.game.history, ...history];
-        State.game.turnNumber += count;
+        let mappedHistory = history.map(entry => ({action: entry, nextTurn: 'place'}));
+        //replace last 'nextTurn' of the last entry to 'move'
+        if (mappedHistory.length > 0) {
+            mappedHistory[mappedHistory.length - 1].nextTurn = 'move';
+        }
+        // @ts-ignore
+        State.game.history = [...State.game.history, ...mappedHistory];
+        State.game.turnNumber += history.length;
+        console.log("Applied second player placements from prompt:", history);
     } else {
         for (let i = 0; i < count; i++) {
             let move = applySecondPlayerStrategy();
+            let turnType = (i === count - 1) ? 'move' : 'place';
             if (move) {
-                State.game.history = [...State.game.history, move];
+                // @ts-ignore
+                State.game.history = [...State.game.history, {action: move, nextTurn: turnType}];
                 State.game.turnNumber++;
             }
         }
@@ -201,7 +233,7 @@ async function second_player(count = 1) {
  * @param {number} rotatedTimes - Number of times the grid was rotated
  * @returns {MoveResult} Result with moves and mergedDestinations in original orientation
  */
-function restoreResults(result, rotatedTimes) {
+export function restoreResults(result, rotatedTimes) {
     if (rotatedTimes === 0) return result;
     // rotate moves and mergedDestinations back to original orientation
     const inv = (4 - rotatedTimes) % 4;

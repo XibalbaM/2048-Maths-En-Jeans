@@ -25,15 +25,25 @@ let tempStorage = {
 };
 
 /**
+ * Generate a default game state based on current configuration
+ * @returns {GameState} Default game state
+ */
+function defaultGameState() {
+    return {
+        grid: Array.from({ length: config.size }, () => Array(config.size).fill(0)),
+        score: 0,
+        turn: 'place',
+        history: [],
+        turnNumber: 0,
+    };
+}
+
+/**
  * Reset the game state to initial values
  * @returns {void}
  */
 function resetGame() {
-    game.grid = Array.from({ length: config.size }, () => Array(config.size).fill(0));
-    game.score = 0;
-    game.turn = 'move';
-    game.history = [];
-    game.turnNumber = 0;
+    game = defaultGameState();
 }
 
 export default {
@@ -43,5 +53,6 @@ export default {
     set config(v) { config = v; },
     get tempStorage() { return tempStorage; },
     set tempStorage(v) { tempStorage = v; },
-    resetGame
+    resetGame,
+    defaultGameState
 };

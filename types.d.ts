@@ -43,7 +43,7 @@ interface GameState {
     grid: number[][];
     score: number;
     turn: TurnType;
-    history: GameAction[];
+    history: HistoryEntry[];
     turnNumber: number;
 }
 
@@ -67,6 +67,11 @@ interface Move {
     direction: Direction;
 }
 
+interface HistoryEntry {
+    action: GameAction;
+    nextTurn: TurnType;
+}
+
 interface GameConfig {
     size: number;
     storageKey: string;
@@ -74,7 +79,7 @@ interface GameConfig {
     firstPlayerStrategy?: PlayerOneStrategy;
     secondPlayerStrategy?: PlayerTwoStrategy;
     initialPlacementsCount: number;
-    loadedHistory: GameAction[];
+    loadedHistory: HistoryEntry[];
 }
 
 type PlayerOneStrategy = {
