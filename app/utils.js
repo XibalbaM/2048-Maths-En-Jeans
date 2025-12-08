@@ -12,10 +12,7 @@ export function simulate(history, initialState) {
         const action = entry.action;
         const nextTurn = entry.nextTurn;
         if (action.type === 'move') {
-            const rotatedTimes = rotatedForDirection(action.direction);
-            let working = rotate(finalState.grid, rotatedTimes);
-            const result = moveLeftOnce(working);
-            const rotatedResults = restoreResults(result, rotatedTimes);
+            const rotatedResults = simulateAMove(action.direction, finalState);
             finalState.grid = rotatedResults.grid;
             finalState.score += rotatedResults.mergedScore;
             finalState.turnNumber++;
@@ -27,4 +24,17 @@ export function simulate(history, initialState) {
     }
     finalState.history = JSON.parse(JSON.stringify(history));
     return finalState;
+}
+
+/**
+ * Simulates a single move in a given direction on the provided game state.
+ * @param {Direction} direction 
+ * @param {GameState} state 
+ * @returns {MoveResult} Resulting grid and score from the move
+ */
+export function simulateAMove(direction, state) {
+    const rotatedTimes = rotatedForDirection(direction);
+    let working = rotate(state.grid, rotatedTimes);
+    const result = moveLeftOnce(working);
+    return restoreResults(result, rotatedTimes);
 }
