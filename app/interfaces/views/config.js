@@ -3,6 +3,8 @@ import DataStore from '../../data.js';
 import { boardEl } from '../elements.js';
 import { firstPlayerStrategies, secondPlayerStrategies } from '../../strategies/list.js';
 
+export let configPopupOpen = false;
+
 /**
  * Show configuration popup for starting a new game
  * 
@@ -10,6 +12,7 @@ import { firstPlayerStrategies, secondPlayerStrategies } from '../../strategies/
  * @returns {void}
  */
 export function showConfigPopup(onSubmit) {
+    configPopupOpen = true;
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     const title = document.createElement('p');
@@ -87,7 +90,10 @@ export function showConfigPopup(onSubmit) {
     btnContainer.className = 'config-buttons';
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Annuler';
-    cancelBtn.onclick = () => overlay.remove();
+    cancelBtn.onclick = () => {
+        overlay.remove();
+        configPopupOpen = false;
+    };
     const startBtn = document.createElement('button');
     startBtn.textContent = 'Démarrer';
     startBtn.onclick = () => {
@@ -113,6 +119,7 @@ export function showConfigPopup(onSubmit) {
         DataStore.saveConfig();
         // Start new game, force reset
         overlay.remove();
+        configPopupOpen = false;
         onSubmit();
     };
     btnContainer.appendChild(cancelBtn);

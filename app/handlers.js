@@ -41,7 +41,13 @@ boardEl.addEventListener('touchend', async (e) => {
     touchStartX = 0; touchStartY = 0;
 });
 
-newBtn.addEventListener('click', () => { if (State.game.turn === 'move') showConfigPopup(newGame); });
+newBtn.addEventListener('click', () => { 
+    if (State.game.turn === 'move') {
+        if (configPopupOpen)
+            return;
+        showConfigPopup(newGame); 
+    }
+});
 
 editBtn.addEventListener('click', () => { if (State.game.turn === 'move') showEditMode(); });
 
