@@ -4,9 +4,14 @@ import { showEditMode } from './interfaces/views/edit.js';
 import { newBtn, editBtn, resetBtn, boardEl, exportBtn, importBtn } from './interfaces/elements.js';
 import DataStore from './data.js';
 import State from './state.js';
+import { configPopupOpen } from './interfaces/views/config.js';
+
+let isProcessingKeyEvent = false;
 
 // Keyboard & touch
 window.addEventListener('keydown', async (e) => {
+    if (isProcessingKeyEvent) return;
+    isProcessingKeyEvent = true;
     const key = e.key;
     let moved = false;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',' '].includes(key)) e.preventDefault();
@@ -17,6 +22,7 @@ window.addEventListener('keydown', async (e) => {
     if (key === ' ') moved = await turn(null);
     if (key === 'Backspace') goBackOneTurn();
     if (moved) DataStore.saveGame();
+    isProcessingKeyEvent = false;
 });
 
 // touch swipe support
