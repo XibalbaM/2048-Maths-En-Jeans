@@ -43,6 +43,16 @@ button:hover{filter:brightness(1.05)}
 .t-512{background:#edc850;color:#f9f6f2;font-size:20px}
 .t-1024{background:#edc53f;color:#f9f6f2;font-size:18px}
 .t-2048{background:#edc22e;color:#f9f6f2;font-size:18px}
+.t-4096{background:#eee4da;color:#776e65;font-size:18px}
+.t-8192{background:#ede0c8;color:#776e65;font-size:18px}
+.t-16384{background:#f2b179;color:#f9f6f2;font-size:16px}
+.t-32768{background:#f59563;color:#f9f6f2;font-size:16px}
+.t-65536{background:#f67c5f;color:#f9f6f2;font-size:16px}
+.t-131072{background:#f65e3b;color:#f9f6f2;font-size:16px}
+.t-262144{background:#edcf72;color:#f9f6f2;font-size:14px}
+.t-524288{background:#edcc61;color:#f9f6f2;font-size:14px}
+.t-1048576{background:#edc850;color:#f9f6f2;font-size:14px}
+.t-2097152{background:#edc53f;color:#f9f6f2;font-size:14px}
 
 .overlay{position:absolute;inset:0;background:rgba(238,228,218,0.85);display:flex;align-items:center;justify-content:center;border-radius:12px;flex-direction:column;padding:18px}
 .overlay p{margin:8px 0;font-size:18px}
