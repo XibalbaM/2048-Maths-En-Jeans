@@ -1,34 +1,60 @@
-import State from "../../state.js";
-import { isEmptyCell } from "../utils.js";
+import { simulateAMove } from '../../utils.js';
+
+/**
+ * Count contiguous full columns starting from the left edge.
+ * @param {number[][]} grid
+ * @returns {number}
+ */
+function countLeadingFullColumns(grid) {
+    const size = grid.length;
+    let count = 0;
+    for (let c = 0; c < size; c++) {
+        let full = true;
+        for (let r = 0; r < size; r++) {
+            const value = grid[r][c];
+            if (value === 0) {
+                full = false;
+                break;
+            }
+            if (r < size - 1 && value === grid[r + 1][c]) {
+                full = false;
+                break;
+            }
+        }
+        if (!full) break;
+        count++;
+    }
+    return count;
+}
+
+/**
+ * Choose the best direction following the snake pattern heuristic.
+ * @param {GameState} state
+ * @returns {Direction | null}
+ */
+function pickDirection(state) {
+    const leadingFull = countLeadingFullColumns(state.grid);
+    /** @type {Direction} */
+    const primaryVertical = (leadingFull % 2 === 0) ? 'up' : 'down';
+    const preferredOrder = /** @type {Direction[]} */ (['left', primaryVertical]);
+
+    for (const direction of preferredOrder) {
+        const { moved } = simulateAMove(direction, state);
+        if (moved) return direction;
+    }
+    return null;
+}
 
 /**
  * @type {PlayerOneStrategy}
  */
+// @ts-ignore
 export default {
-    name: "Coop Max",
+    name: "Coop Max Pass",
     fun(state) {
-        for (let x = 0; x < 4; x++) {
-            for (let y = 0; y < 4; y++) {
-                const a = state.grid?.[y]?.[x] ?? state.cells?.[y]?.[x];
-                if (isEmptyCell(a)) continue;
-
-                const getVal = c => (c && typeof c === "object" && "value" in c) ? c.value : c;
-
-                // check right neighbor -> move LEFT to combine into the current cell
-                if (x + 1 < 4) {
-                    const b = state.grid?.[y]?.[x + 1] ?? state.cells?.[y]?.[x + 1];
-                    if (!isEmptyCell(b) && getVal(a) === getVal(b)) return State.LEFT;
-                }
-
-                // check down neighbor -> move UP to combine into the current cell
-                if (y + 1 < 4) {
-                    const b = state.grid?.[y + 1]?.[x] ?? state.cells?.[y + 1]?.[x];
-                    if (!isEmptyCell(b) && getVal(a) === getVal(b)) return State.UP;
-                }
-            }
-        }
-
-        // fallback if no adjacent pair found
-        return State.UP;
+        // Keep the snake packed: alternate vertical sweeps per filled column, fall back to left, never go right.
+        const direction = pickDirection(state);
+        if (!direction) return null;
+        return { type: 'move', direction };
     }
 }
