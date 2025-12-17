@@ -26,31 +26,23 @@ export default {
             return null;
         }
 
-        // Find empty cells adjacent to filled cells
-        const adjacentEmpty = findAdjacentEmptyCells(grid);
-        if (adjacentEmpty.length === 0) {
-            return null;
-        }
-
-        // Use snake path to determine which adjacent empty cell to fill
+        // Get snake path to find empty cells in order
         const snakePath = getSnakePath(State.config.size);
         if (!snakePath.length) return null;
 
-        // Find the first adjacent empty cell in snake path order
-        const snakePathSet = new Set(snakePath.map(([r, c]) => `${r},${c}`));
-        const snakeOrder = adjacentEmpty
-            .map(([r, c]) => ({
-                r, c,
-                snakeIdx: snakePath.findIndex(([sr, sc]) => sr === r && sc === c)
-            }))
-            .filter(cell => cell.snakeIdx !== -1)
-            .sort((a, b) => a.snakeIdx - b.snakeIdx);
+        // Find all empty cells in snake order
+        const emptyCells = snakePath.filter(([r, c]) => grid[r] && grid[r][c] === 0);
+        if (emptyCells.length === 0) return null;
 
-        if (snakeOrder.length === 0) {
-            return null;
+        // First, try to find an empty cell where placing would make a fusion possible
+        for (const [r, c] of emptyCells) {
+            if (wouldEnableFusion(grid, r, c, fourValue)) {
+                return { type: 'place', r, c, value: fourValue };
+            }
         }
 
-        const [r, c] = [snakeOrder[0].r, snakeOrder[0].c];
+        // If no placement enables fusion, use the first empty cell in snake order
+        const [r, c] = emptyCells[1];
         return { type: 'place', r, c, value: fourValue };
     }
 }
@@ -88,52 +80,27 @@ function hasFusionAvailable(grid) {
     return false;
 }
 
-function findFirstEmptyIndex(grid, path) {
-    for (let i = 0; i < path.length; i++) {
-        const [r, c] = path[i];
-        if (grid[r] && grid[r][c] === 0) return i;
-    }
-    return -1;
-}
-
-function findLastFilledIndex(grid, path) {
-    for (let i = path.length - 1; i >= 0; i--) {
-        const [r, c] = path[i];
-        if (grid[r] && grid[r][c]) return i;
-    }
-    return -1;
-}
-
-function findNextEmptyIndexFrom(grid, path, startIdx) {
-    if (startIdx < 0) startIdx = 0;
-    for (let i = startIdx; i < path.length; i++) {
-        const [r, c] = path[i];
-        if (grid[r] && grid[r][c] === 0) return i;
-    }
-    return path.length;
-}
-
-function findAdjacentEmptyCells(grid) {
+function wouldEnableFusion(grid, r, c, value) {
+    // Check if placing 'value' at (r, c) would create adjacent tiles with same value
     const size = grid.length;
-    const adjacent = new Set();
     
-    // For each filled cell, add adjacent empty cells
-    for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-            if (grid[r][c] !== 0) {
-                // Check all 4 directions
-                if (r > 0 && grid[r - 1][c] === 0) adjacent.add(`${r - 1},${c}`);
-                if (r < size - 1 && grid[r + 1][c] === 0) adjacent.add(`${r + 1},${c}`);
-                if (c > 0 && grid[r][c - 1] === 0) adjacent.add(`${r},${c - 1}`);
-                if (c < size - 1 && grid[r][c + 1] === 0) adjacent.add(`${r},${c + 1}`);
+    // Check all 4 directions for matching values
+    const directions = [
+        [r - 1, c], // up
+        [r + 1, c], // down
+        [r, c - 1], // left
+        [r, c + 1]  // right
+    ];
+    
+    for (const [nr, nc] of directions) {
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+            if (grid[nr][nc] === value) {
+                return true;
             }
         }
     }
     
-    return Array.from(adjacent).map(key => {
-        const [r, c] = key.split(',').map(Number);
-        return [r, c];
-    });
+    return false;
 }
 
 function countPlacements(history) {

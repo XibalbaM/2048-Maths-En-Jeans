@@ -18,6 +18,7 @@ button{background:#8f7a66;border:none;color:white;padding:8px 12px;border-radius
 button:hover{filter:brightness(1.05)}
 .scorebox{background:#eee;padding:8px 12px;border-radius:6px;min-width:86px;text-align:center}
 .small{font-size:12px;color:#6b5b4c}
+.turn-indicator{margin:4px 0 12px;color:#6b5b4c;font-weight:600;min-height:18px}
 
 .board{position:relative;padding:20px;background:var(--board-bg);border-radius:12px;display:inline-block}
 .grid{display:grid;grid-template-columns:repeat(var(--size), var(--cell-size));grid-gap:var(--gap)}

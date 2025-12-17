@@ -1,4 +1,4 @@
-import { scoreEl, gridEl, tileLayer } from "./elements.js";
+import { scoreEl, gridEl, tileLayer, turnIndicatorEl } from "./elements.js";
 import State from "../state.js";
 
 /**
@@ -7,6 +7,17 @@ import State from "../state.js";
  */
 export function render() {
     if (scoreEl) scoreEl.textContent = String(State.game.score);
+    if (turnIndicatorEl) {
+        const spectator = Boolean(State.config.firstPlayerStrategy && State.config.secondPlayerStrategy);
+        if (spectator) {
+            const label = State.game.turn === 'move' ? 'Déplacement — stratégie joueur 1' : 'Placement — stratégie joueur 2';
+            turnIndicatorEl.textContent = `Mode spectateur : ${label}`;
+            turnIndicatorEl.style.display = 'block';
+        } else {
+            turnIndicatorEl.textContent = '';
+            turnIndicatorEl.style.display = 'none';
+        }
+    }
     // grid visuals
     if (!gridEl) return;
     gridEl.innerHTML = '';

@@ -16,3 +16,5 @@ export const editBtn = document.getElementById('edit');
 export const exportBtn = document.getElementById('export');
 /** @type {HTMLElement | null} */
 export const importBtn = document.getElementById('import');
+/** @type {HTMLElement | null} */
+export const turnIndicatorEl = document.getElementById('turn-indicator');

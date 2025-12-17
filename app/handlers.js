@@ -1,4 +1,4 @@
-import { newGame, turn, goBackOneTurn } from './game.js';
+import { newGame, turn, goBackOneTurn, spectatorStep, isSpectatorModeEnabled } from './game.js';
 import { showConfigPopup } from './interfaces/views/config.js';
 import { showEditMode } from './interfaces/views/edit.js';
 import { newBtn, editBtn, resetBtn, boardEl, exportBtn, importBtn } from './interfaces/elements.js';
@@ -11,10 +11,24 @@ let isProcessingKeyEvent = false;
 // Keyboard & touch
 window.addEventListener('keydown', async (e) => {
     if (isProcessingKeyEvent) return;
-    isProcessingKeyEvent = true;
     const key = e.key;
+    const spectator = isSpectatorModeEnabled();
     let moved = false;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',' '].includes(key)) e.preventDefault();
+    if (spectator) {
+        if (key === ' ') {
+            isProcessingKeyEvent = true;
+            try {
+                moved = await spectatorStep();
+                if (moved) DataStore.saveGame();
+            } finally {
+                isProcessingKeyEvent = false;
+            }
+        }
+        if (key === 'Backspace') goBackOneTurn();
+        return;
+    }
+    isProcessingKeyEvent = true;
     if (key === 'ArrowLeft' || key === 'q' || key === 'Q') moved = await turn('left');
     if (key === 'ArrowRight' || key === 'd' || key === 'D') moved = await turn('right');
     if (key === 'ArrowUp' || key === 'z' || key === 'Z') moved = await turn('up');
@@ -30,6 +44,7 @@ let touchStartX = 0, touchStartY = 0;
 boardEl.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY } });
 boardEl.addEventListener('touchend', async (e) => {
     if (!touchStartX) return;
+    if (isSpectatorModeEnabled()) { touchStartX = 0; touchStartY = 0; return; }
     const dx = (e.changedTouches[0].clientX - touchStartX);
     const dy = (e.changedTouches[0].clientY - touchStartY);
     const absX = Math.abs(dx), absY = Math.abs(dy);

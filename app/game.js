@@ -6,6 +6,10 @@ import { animateMoves } from './interfaces/animations.js';
 import { render } from './interfaces/rendering.js';
 import { simulate } from './utils.js';
 
+export function isSpectatorModeEnabled() {
+    return Boolean(State.config.firstPlayerStrategy && State.config.secondPlayerStrategy);
+}
+
 /**
  * Create a copy of the grid
  * @param {number[][]} g - Grid to copy
@@ -155,6 +159,7 @@ export async function goBackOneTurn() {
  * @returns {Promise<boolean>} True if movement occurred, false otherwise
  */
 export async function turn(direction) {
+    if (isSpectatorModeEnabled()) return false;
     await move(direction);
     await second_player();
     State.tempStorage.isProcessing = false;
@@ -196,7 +201,9 @@ async function move(direction) {
     render();
 }
 
-async function second_player(count = 1) {
+async function second_player(count = 1, options = {}) {
+    const { force = false } = options;
+    if (isSpectatorModeEnabled() && !force) return;
     if (State.game.turn !== 'place') return;
     if (!State.config.secondPlayerStrategy) {
         let history = await promptSecondPlayer(count);
@@ -270,7 +277,7 @@ export async function newGame() {
     DataStore.saveGame();
     render();
     State.game.turn = 'place';
-    await second_player(State.config.initialPlacementsCount);
+    await second_player(State.config.initialPlacementsCount, { force: true });
 }
 
 function applySecondPlayerStrategy() {
@@ -298,6 +305,66 @@ function init() {
         render();
         second_player();
     }
+}
+
+async function performStrategyMoveStep() {
+    const strategy = State.config.firstPlayerStrategy;
+    if (!strategy) return false;
+    const choosenMove = strategy.fun(State.game);
+    if (!choosenMove) {
+        State.game.turn = 'place';
+        render();
+        return false;
+    }
+    const direction = choosenMove.direction;
+    const rotatedTimes = rotatedForDirection(direction);
+    const working = rotate(State.game.grid, rotatedTimes);
+    const result = moveLeftOnce(working);
+    if (!result.moved) {
+        State.game.turn = 'place';
+        render();
+        return false;
+    }
+    const rotatedResults = restoreResults(result, rotatedTimes);
+    await animateMoves(rotatedResults.moves, rotatedResults.mergedDestinations);
+    State.game.grid = rotatedResults.grid;
+    State.game.score += rotatedResults.mergedScore;
+    State.game.turn = 'place';
+    State.game.history.push({ action: { type: 'move', direction }, nextTurn: 'place' });
+    State.game.turnNumber++;
+    DataStore.saveGame();
+    render();
+    return true;
+}
+
+function performStrategyPlacementStep() {
+    const placement = applySecondPlayerStrategy();
+    State.game.turn = 'move';
+    if (placement) {
+        // @ts-ignore
+        State.game.history = [...State.game.history, { action: placement, nextTurn: 'move' }];
+        State.game.turnNumber++;
+    }
+    DataStore.saveGame();
+    render();
+    return Boolean(placement);
+}
+
+export async function spectatorStep() {
+    if (!isSpectatorModeEnabled()) return turn(null);
+    if (State.tempStorage.isProcessing) return false;
+    State.tempStorage.isProcessing = true;
+    let result = false;
+    try {
+        if (State.game.turn === 'move') {
+            result = await performStrategyMoveStep();
+        } else if (State.game.turn === 'place') {
+            result = performStrategyPlacementStep();
+        }
+    } finally {
+        State.tempStorage.isProcessing = false;
+    }
+    return result;
 }
 
 init();
