@@ -22,7 +22,7 @@ function copyGrid(g) { return g.map(row => row.slice()); }
  * @returns {void}
  */
 function resetGrid() {
-    State.game.grid = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
+    State.game.grid = Array.from({ length: State.config.rows }, () => Array(State.config.cols).fill(0));
 }
 
 // Persistence helpers moved to app/data.js (global DataStore)
@@ -49,8 +49,10 @@ export function addTileAt(r, c, value) {
 export function rotate(g, times = 1) {
     let res = copyGrid(g);
     for (let t = 0; t < times; t++) {
-        const tmp = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
-        for (let r = 0; r < State.config.size; r++) for (let c = 0; c < State.config.size; c++) tmp[c][State.config.size - 1 - r] = res[r][c];
+        const rows = res.length;
+        const cols = res[0].length;
+        const tmp = Array.from({ length: cols }, () => Array(rows).fill(0));
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) tmp[c][rows - 1 - r] = res[r][c];
         res = tmp;
     }
     return res;
@@ -64,16 +66,18 @@ export function rotate(g, times = 1) {
 export function moveLeftOnce(g) {
     // Re-implementation to also produce movement mapping for animations
     let moved = false; let mergedScore = 0;
-    const out = Array.from({ length: State.config.size }, () => Array(State.config.size).fill(0));
+    const rows = g.length;
+    const cols = g[0].length;
+    const out = Array.from({ length: rows }, () => Array(cols).fill(0));
     /** @type {TileMove[]} */
     const moves = [];
     /** @type {MergedDestination[]} */
     const mergedDestinations = [];
 
-    for (let r = 0; r < State.config.size; r++) {
+    for (let r = 0; r < rows; r++) {
         // collect non-zero tiles with original columns
         const entries = [];
-        for (let c = 0; c < State.config.size; c++) {
+        for (let c = 0; c < cols; c++) {
             const v = g[r][c];
             if (v !== 0) entries.push({ c, val: v });
         }
@@ -119,15 +123,19 @@ export function rotatedForDirection(direction) {
  * Rotate a coordinate clockwise by specified number of 90-degree turns
  * @param {number} r - Row coordinate
  * @param {number} c - Column coordinate
+ * @param {number} startRows - Initial number of rows
+ * @param {number} startCols - Initial number of columns
  * @param {number} [times=1] - Number of 90-degree clockwise rotations
  * @returns {[number, number]} New [row, column] coordinates
  */
-function rotateCoord(r, c, times = 1) {
-    let rr = r, cc = c;
+function rotateCoord(r, c, startRows, startCols, times = 1) {
+    let rr = r, cc = c, curRows = startRows, curCols = startCols;
     for (let t = 0; t < times; t++) {
         const nrr = cc;
-        const ncc = State.config.size - 1 - rr;
+        const ncc = curRows - 1 - rr;
         rr = nrr; cc = ncc;
+        // swap dims
+        const tmp = curRows; curRows = curCols; curCols = tmp;
     }
     return [rr, cc];
 }
@@ -195,7 +203,7 @@ async function move(direction) {
     State.game.grid = rotatedResults.grid;
     State.game.score += rotatedResults.mergedScore;
     State.game.turn = 'place';
-    State.game.history.push({action: { type: 'move', direction }, nextTurn: 'place'});
+    State.game.history.push({ action: { type: 'move', direction }, nextTurn: 'place' });
     State.game.turnNumber++;
     DataStore.saveGame();
     render();
@@ -207,7 +215,7 @@ async function second_player(count = 1, options = {}) {
     if (State.game.turn !== 'place') return;
     if (!State.config.secondPlayerStrategy) {
         let history = await promptSecondPlayer(count);
-        let mappedHistory = history.map(entry => ({action: entry, nextTurn: 'place'}));
+        let mappedHistory = history.map(entry => ({ action: entry, nextTurn: 'place' }));
         //replace last 'nextTurn' of the last entry to 'move'
         if (mappedHistory.length > 0) {
             mappedHistory[mappedHistory.length - 1].nextTurn = 'move';
@@ -221,7 +229,7 @@ async function second_player(count = 1, options = {}) {
             let turnType = (i === count - 1) ? 'move' : 'place';
             if (move) {
                 // @ts-ignore
-                State.game.history = [...State.game.history, {action: move, nextTurn: turnType}];
+                State.game.history = [...State.game.history, { action: move, nextTurn: turnType }];
                 State.game.turnNumber++;
             }
         }
@@ -243,10 +251,20 @@ export function restoreResults(result, rotatedTimes) {
     const inv = (4 - rotatedTimes) % 4;
     /** @Type number[][] */
     const rotatedGrid = rotate(result.grid, inv);
+
+    // For rotateCoord, we need the dimensions at the start of the inverse rotation.
+    // result.grid is the grid AFTER moveLeftOnce (which operates on 'working' grid).
+    // The working grid has dimensions relative to how many times we rotated.
+    // However, rotateCoord simulates rotation step by step.
+    // We want to transform from (r, c) in 'working' grid to (r, c) in original 'prev' grid.
+    // 'working' grid dimensions:
+    const workingRows = result.grid.length;
+    const workingCols = result.grid[0].length;
+
     /** @type {TileMove[]} */
     const rotatedMoves = result.moves.map(m => {
-        const [fromR, fromC] = rotateCoord(m.fromR, m.fromC, inv);
-        const [toR, toC] = rotateCoord(m.toR, m.toC, inv);
+        const [fromR, fromC] = rotateCoord(m.fromR, m.fromC, workingRows, workingCols, inv);
+        const [toR, toC] = rotateCoord(m.toR, m.toC, workingRows, workingCols, inv);
         return {
             fromR, fromC, toR, toC,
             value: m.value,
@@ -256,7 +274,7 @@ export function restoreResults(result, rotatedTimes) {
     });
     /** @type {MergedDestination[]} */
     const rotatedMergedDestinations = result.mergedDestinations.map(md => {
-        const [rr, cc] = rotateCoord(md.r, md.c, inv);
+        const [rr, cc] = rotateCoord(md.r, md.c, workingRows, workingCols, inv);
         return { r: rr, c: cc, newValue: md.newValue };
     });
     return {
@@ -296,7 +314,8 @@ function applySecondPlayerStrategy() {
  * @returns {void}
  */
 function init() {
-    document.documentElement.style.setProperty('--size', String(State.config.size));
+    document.documentElement.style.setProperty('--rows', String(State.config.rows));
+    document.documentElement.style.setProperty('--cols', String(State.config.cols));
     // if empty grid and second player enabled, force initial placements
     const isEmpty = State.game.grid.every(row => row.every(v => v === 0));
     if (isEmpty) {

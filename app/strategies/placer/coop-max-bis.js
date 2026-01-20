@@ -4,7 +4,7 @@ import State from "../../state.js";
  * @type {PlayerTwoStrategy}
  */
 export default {
-    name: "Coop Max Pass",
+    name: "Coop Max Pass Bis",
     fun(state) {
         const grid = state.grid;
         const fourValue = State.config.tileValues[1] ?? 4;
@@ -22,10 +22,6 @@ export default {
             }
         }
 
-        if (hasFusionAvailable(grid)) {
-            return null;
-        }
-
         // Get snake path to find empty cells in order
         const snakePath = getSnakePath(State.config.rows, State.config.cols);
         if (!snakePath.length) return null;
@@ -33,6 +29,12 @@ export default {
         // Find all empty cells in snake order
         const emptyCells = snakePath.filter(([r, c]) => grid[r] && grid[r][c] === 0);
         if (emptyCells.length === 0) return null;
+
+        if (hasFusionAvailable(grid)) {
+            // Return last empty cell in snake order
+            const [r, c] = emptyCells[emptyCells.length - 1];
+            return { type: 'place', r, c, value: fourValue };
+        }
 
         // First, try to find an empty cell where placing would make a fusion possible
         for (const [r, c] of emptyCells) {

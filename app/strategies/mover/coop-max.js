@@ -39,6 +39,11 @@ function pickDirection(state) {
     const preferredOrder = /** @type {Direction[]} */ (['left', primaryVertical]);
 
     for (const direction of preferredOrder) {
+        const { mergedScore } = simulateAMove(direction, state);
+        if (mergedScore > 0) return direction;
+    }
+
+    for (const direction of preferredOrder) {
         const { moved } = simulateAMove(direction, state);
         if (moved) return direction;
     }

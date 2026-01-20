@@ -47,8 +47,13 @@ export default class DataStore {
                 const obj = JSON.parse(raw);
                 if (obj && typeof obj === 'object') {
                     // primitives
-                    if (typeof obj.size === 'number') State.config.size = obj.size;
-                    if (Array.isArray(obj.tileValues)) State.config.tileValues = obj.tileValues.filter(n=>typeof n==='number');
+                    if (typeof obj.size === 'number') {
+                        State.config.rows = obj.size;
+                        State.config.cols = obj.size;
+                    }
+                    if (typeof obj.rows === 'number') State.config.rows = obj.rows;
+                    if (typeof obj.cols === 'number') State.config.cols = obj.cols;
+                    if (Array.isArray(obj.tileValues)) State.config.tileValues = obj.tileValues.filter(n => typeof n === 'number');
                     if (typeof obj.storageKey === 'string') State.config.storageKey = obj.storageKey;
                     if (typeof obj.initialPlacementsCount === 'number') State.config.initialPlacementsCount = obj.initialPlacementsCount;
                     // strategies by name (support legacy object-with-name too)
@@ -56,10 +61,10 @@ export default class DataStore {
                         : (obj.firstPlayerStrategy && typeof obj.firstPlayerStrategy.name === 'string' ? obj.firstPlayerStrategy.name : '');
                     const p2Name = typeof obj.secondPlayerStrategy === 'string' ? obj.secondPlayerStrategy
                         : (obj.secondPlayerStrategy && typeof obj.secondPlayerStrategy.name === 'string' ? obj.secondPlayerStrategy.name : '');
-                    State.config.firstPlayerStrategy = p1Name ? firstPlayerStrategies.find(s=>s.name===p1Name) : undefined;
-                    State.config.secondPlayerStrategy = p2Name ? secondPlayerStrategies.find(s=>s.name===p2Name) : undefined;
+                    State.config.firstPlayerStrategy = p1Name ? firstPlayerStrategies.find(s => s.name === p1Name) : undefined;
+                    State.config.secondPlayerStrategy = p2Name ? secondPlayerStrategies.find(s => s.name === p2Name) : undefined;
                     if (Array.isArray(obj.loadedHistory)) {
-                        State.config.loadedHistory = obj.loadedHistory.filter(a=>typeof a==='object');
+                        State.config.loadedHistory = obj.loadedHistory.filter(a => typeof a === 'object');
                     }
                 }
             }
@@ -73,7 +78,8 @@ export default class DataStore {
     static saveConfig() {
         try {
             const toSave = {
-                size: State.config.size,
+                rows: State.config.rows,
+                cols: State.config.cols,
                 storageKey: State.config.storageKey,
                 tileValues: State.config.tileValues,
                 initialPlacementsCount: State.config.initialPlacementsCount,

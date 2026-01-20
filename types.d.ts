@@ -73,7 +73,8 @@ interface HistoryEntry {
 }
 
 interface GameConfig {
-    size: number;
+    rows: number;
+    cols: number;
     storageKey: string;
     tileValues: number[];
     firstPlayerStrategy?: PlayerOneStrategy;

@@ -11,7 +11,8 @@ let game = {
 
 /** @type {GameConfig} */
 let config = {
-    size: 4,
+    rows: 4,
+    cols: 4,
     storageKey: 'local2048_v2',
     tileValues: [2, 4],
     firstPlayerStrategy: undefined,
@@ -30,7 +31,7 @@ let tempStorage = {
  */
 function defaultGameState() {
     return {
-        grid: Array.from({ length: config.size }, () => Array(config.size).fill(0)),
+        grid: Array.from({ length: config.rows }, () => Array(config.cols).fill(0)),
         score: 0,
         turn: 'place',
         history: [],

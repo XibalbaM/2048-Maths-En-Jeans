@@ -30,17 +30,18 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
         // picker grid
         const pickerGrid = document.createElement('div');
         pickerGrid.className = 'picker-grid';
-        pickerGrid.style.setProperty('--size', String(State.config.size));
+        pickerGrid.style.setProperty('--rows', String(State.config.rows));
+        pickerGrid.style.setProperty('--cols', String(State.config.cols));
 
         // collect empties
         const empties = [];
-        for (let r = 0; r < State.config.size; r++) for (let c = 0; c < State.config.size; c++) if (State.game.grid[r][c] === 0) empties.push([r, c]);
+        for (let r = 0; r < State.config.rows; r++) for (let c = 0; c < State.config.cols; c++) if (State.game.grid[r][c] === 0) empties.push([r, c]);
 
         // build cells (clickable)
         /** @type {HTMLElement[]} */
         const cellEls = [];
-        for (let r = 0; r < State.config.size; r++) {
-            for (let c = 0; c < State.config.size; c++) {
+        for (let r = 0; r < State.config.rows; r++) {
+            for (let c = 0; c < State.config.cols; c++) {
                 const el = document.createElement('div');
                 el.className = 'picker-cell';
                 if (State.game.grid[r][c] === 0) { el.classList.add('empty'); el.textContent = ''; }

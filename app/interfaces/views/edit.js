@@ -12,13 +12,13 @@ import { abstractEdit } from './abstract_edit.js';
 export function showEditMode() {
     const allowedValues = [];
     let current = 2;
-    for (let i = 0; i <= State.config.size * State.config.size; i++) {
+    for (let i = 0; i <= State.config.rows * State.config.cols; i++) {
         allowedValues.push(current);
         current *= 2;
     }
     function callback(actions) {
         State.game.history = [...State.game.history, ...actions];
-        State.game.turnNumber =+ actions.size;
+        State.game.turnNumber = + actions.size;
         DataStore.saveGame();
         render();
     }

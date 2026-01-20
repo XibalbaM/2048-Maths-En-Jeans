@@ -19,16 +19,31 @@ export function showConfigPopup(onSubmit) {
     title.textContent = 'Configuration de la nouvelle partie';
     const form = document.createElement('div');
     form.className = 'config-form';
-    // Grid size
-    const sizeLabel = document.createElement('label');
-    sizeLabel.textContent = 'Taille de la grille (2-8): ';
-    const sizeInput = document.createElement('input');
-    sizeInput.type = 'number';
-    sizeInput.min = String(2);
-    sizeInput.max = String(8);
-    sizeInput.value = String(State.config.size);
-    sizeLabel.appendChild(sizeInput);
-    form.appendChild(sizeLabel);
+    // Grid dimensions
+    const dimLabel = document.createElement('label');
+    dimLabel.textContent = 'Dimensions (Lignes x Colonnes): ';
+    const dimContainer = document.createElement('div');
+    dimContainer.style.display = 'flex';
+    dimContainer.style.gap = '8px';
+
+    const rowsInput = document.createElement('input');
+    rowsInput.type = 'number';
+    rowsInput.min = '2';
+    rowsInput.max = '8';
+    rowsInput.value = String(State.config.rows);
+    rowsInput.placeholder = 'Lignes';
+
+    const colsInput = document.createElement('input');
+    colsInput.type = 'number';
+    colsInput.min = '2';
+    colsInput.max = '8';
+    colsInput.value = String(State.config.cols);
+    colsInput.placeholder = 'Colonnes';
+
+    dimContainer.appendChild(rowsInput);
+    dimContainer.appendChild(colsInput);
+    dimLabel.appendChild(dimContainer);
+    form.appendChild(dimLabel);
     // Tile values
     const tileLabel = document.createElement('label');
     tileLabel.textContent = 'Valeurs des tuiles (séparées par des virgules): ';
@@ -47,7 +62,7 @@ export function showConfigPopup(onSubmit) {
     p1None.textContent = 'Aucune';
     p1Select.appendChild(p1None);
     // Fill from list
-    firstPlayerStrategies.forEach((s)=>{
+    firstPlayerStrategies.forEach((s) => {
         if (s.name === "Fichier" && State.config.loadedHistory.length === 0) return;
         const opt = document.createElement('option');
         opt.value = s.name;
@@ -71,7 +86,7 @@ export function showConfigPopup(onSubmit) {
     p2None.value = '';
     p2None.textContent = 'Aucune';
     p2Select.appendChild(p2None);
-    secondPlayerStrategies.forEach((s)=>{
+    secondPlayerStrategies.forEach((s) => {
         if (s.name === "Fichier" && State.config.loadedHistory.length === 0) return;
         const opt = document.createElement('option');
         opt.value = s.name;
@@ -98,9 +113,13 @@ export function showConfigPopup(onSubmit) {
     startBtn.textContent = 'Démarrer';
     startBtn.onclick = () => {
         // Parse
-        let size = parseInt(sizeInput.value);
-        if (isNaN(size) || size < 2) size = 2;
-        if (size > 8) size = 8;
+        let rows = parseInt(rowsInput.value);
+        let cols = parseInt(colsInput.value);
+        if (isNaN(rows) || rows < 2) rows = 2;
+        if (rows > 8) rows = 8;
+        if (isNaN(cols) || cols < 2) cols = 2;
+        if (cols > 8) cols = 8;
+
         const tileStr = tileInput.value.trim();
         let tileValues = tileStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
         if (tileValues.length === 0) tileValues = [2, 4];
@@ -111,10 +130,12 @@ export function showConfigPopup(onSubmit) {
         const p2 = secondPlayerStrategies.find(s => s.name === p2Name);
         // Update State.config
         State.config.tileValues = tileValues;
-        State.config.size = size;
+        State.config.rows = rows;
+        State.config.cols = cols;
         State.config.firstPlayerStrategy = p1Name ? p1 : undefined;
         State.config.secondPlayerStrategy = p2Name ? p2 : undefined;
-        document.documentElement.style.setProperty('--size', String(State.config.size));
+        document.documentElement.style.setProperty('--rows', String(State.config.rows));
+        document.documentElement.style.setProperty('--cols', String(State.config.cols));
         // Save
         DataStore.saveConfig();
         // Start new game, force reset
