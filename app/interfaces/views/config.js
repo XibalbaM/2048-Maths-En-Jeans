@@ -28,14 +28,14 @@ export function showConfigPopup(onSubmit) {
 
     const rowsInput = document.createElement('input');
     rowsInput.type = 'number';
-    rowsInput.min = '2';
+    rowsInput.min = '1';
     rowsInput.max = '8';
     rowsInput.value = String(State.config.rows);
     rowsInput.placeholder = 'Lignes';
 
     const colsInput = document.createElement('input');
     colsInput.type = 'number';
-    colsInput.min = '2';
+    colsInput.min = '1';
     colsInput.max = '8';
     colsInput.value = String(State.config.cols);
     colsInput.placeholder = 'Colonnes';
@@ -115,9 +115,9 @@ export function showConfigPopup(onSubmit) {
         // Parse
         let rows = parseInt(rowsInput.value);
         let cols = parseInt(colsInput.value);
-        if (isNaN(rows) || rows < 2) rows = 2;
+        if (isNaN(rows) || rows < 1) rows = 1;
         if (rows > 8) rows = 8;
-        if (isNaN(cols) || cols < 2) cols = 2;
+        if (isNaN(cols) || cols < 1) cols = 1;
         if (cols > 8) cols = 8;
 
         const tileStr = tileInput.value.trim();
