@@ -429,3 +429,7 @@ button#reset:hover {
     --cell-size: 64px
   }
 }
+
+html {
+  overflow-y: hidden;
+}
