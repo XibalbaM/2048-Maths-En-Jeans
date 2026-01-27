@@ -25,7 +25,7 @@ window.addEventListener('keydown', async (e) => {
                 isProcessingKeyEvent = false;
             }
         }
-        if (key === 'Backspace') goBackOneTurn();
+        if (key === 'Backspace' && !configPopupOpen) goBackOneTurn();
         return;
     }
     isProcessingKeyEvent = true;
@@ -34,7 +34,7 @@ window.addEventListener('keydown', async (e) => {
     if (key === 'ArrowUp' || key === 'z' || key === 'Z') moved = await turn('up');
     if (key === 'ArrowDown' || key === 's' || key === 'S') moved = await turn('down');
     if (key === ' ') moved = await turn(null);
-    if (key === 'Backspace') goBackOneTurn();
+    if (key === 'Backspace' && !configPopupOpen) goBackOneTurn();
     if (moved) DataStore.saveGame();
     isProcessingKeyEvent = false;
 });
@@ -56,11 +56,11 @@ boardEl.addEventListener('touchend', async (e) => {
     touchStartX = 0; touchStartY = 0;
 });
 
-newBtn.addEventListener('click', () => { 
+newBtn.addEventListener('click', () => {
     if (State.game.turn === 'move') {
         if (configPopupOpen)
             return;
-        showConfigPopup(newGame); 
+        showConfigPopup(newGame);
     }
 });
 
