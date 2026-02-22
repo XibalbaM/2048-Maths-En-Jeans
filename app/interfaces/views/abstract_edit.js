@@ -128,7 +128,7 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
                         el.textContent = '';
                         el.classList.remove('t-' + oldVal);
                         el.classList.add('empty');
-                        actions.push({ type: 'delete', r, c });// log action
+                        actions.push({ type: 'place', r, c, value: 0 });// log action
                     }
                     return;
                 }
