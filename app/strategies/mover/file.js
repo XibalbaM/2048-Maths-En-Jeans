@@ -7,8 +7,14 @@ import { isEmptyCell } from "../utils.js";
 export default {
     name: "Fichier",
     fun(state) {
-        const fileData = State.config.loadedHistory[State.game.turnNumber];
-        if (fileData && fileData.action.type === 'move') {
+        let fileData = State.config.loadedHistory[State.game.turnNumber];
+        console.log("File data:", fileData);
+        if (!fileData) {
+            return null;
+        }
+        // @ts-ignore
+        if (!fileData.action) fileData = {action: fileData, nextTurn: "place"};
+        if (fileData.action.type === 'move') {
             return fileData.action;
         }
         return null;
