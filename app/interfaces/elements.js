@@ -17,4 +17,8 @@ export const exportBtn = document.getElementById('export');
 /** @type {HTMLElement | null} */
 export const importBtn = document.getElementById('import');
 /** @type {HTMLElement | null} */
+export const exportStateBtn = document.getElementById('export-state');
+/** @type {HTMLElement | null} */
+export const importStateBtn = document.getElementById('import-state');
+/** @type {HTMLElement | null} */
 export const turnIndicatorEl = document.getElementById('turn-indicator');
