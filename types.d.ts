@@ -47,13 +47,7 @@ interface GameState {
     turnNumber: number;
 }
 
-type GameAction = Delete | Place | Move;
-
-interface Delete {
-    type: 'delete';
-    r: number;
-    c: number;
-}
+type GameAction = Place | Move;
 
 interface Place {
     type: 'place';

@@ -35,9 +35,14 @@ function resetGrid() {
  * @returns {boolean} True if tile was added, false if cell was occupied
  */
 export function addTileAt(r, c, value) {
-    if (State.game.grid[r][c] !== 0) return false;
-    State.game.grid[r][c] = value;
-    return true;
+    if (value === 0) {
+        State.game.grid[r][c] = 0;
+        return true;
+    } else {
+        if (State.game.grid[r][c] !== 0) return false;
+        State.game.grid[r][c] = value;
+        return true;
+    }
 }
 
 /**
