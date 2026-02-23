@@ -7,6 +7,8 @@ import coopMax2 from "./mover/coop-max.js";
 import coopMin from "./placer/coop-min.js";
 import coopMin2 from "./mover/coop-min.js";
 import coopMaxBis from "./placer/coop-max-bis.js";
+import minmaxM from "./mover/minmax.js";
+import minmaxP from "./placer/minmax.js";
 
 /**
  * @type {PlayerOneStrategy[]}
@@ -15,7 +17,8 @@ export const firstPlayerStrategies = [
     fileM,
     coopMax2,
     coopMin2,
-    random2
+    random2,
+    minmaxM
 ];
 /**
  * @type {PlayerTwoStrategy[]}
@@ -25,5 +28,6 @@ export const secondPlayerStrategies = [
     fileP,
     coopMax,
     coopMin,
-    coopMaxBis
+    coopMaxBis,
+    minmaxP
 ]
