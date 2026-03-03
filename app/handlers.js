@@ -12,6 +12,7 @@ let isProcessingKeyEvent = false;
 
 // Keyboard & touch
 window.addEventListener('keydown', async (e) => {
+    e.preventDefault();
     if (isProcessingKeyEvent) return;
     const key = e.key;
     const spectator = isSpectatorModeEnabled();
