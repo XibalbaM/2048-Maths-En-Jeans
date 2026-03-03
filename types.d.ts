@@ -47,6 +47,11 @@ interface GameState {
     turnNumber: number;
 }
 
+interface SaveState {
+    game: GameState;
+    config: GameConfig;
+}
+
 type GameAction = Place | Move;
 
 interface Place {

@@ -1,0 +1,44 @@
+{
+  "game": {
+    "grid": [
+      [
+        1024,
+        16,
+        8,
+        0
+      ],
+      [
+        1024,
+        32,
+        8,
+        0
+      ],
+      [
+        1024,
+        32,
+        0,
+        0
+      ],
+      [
+        512,
+        128,
+        0,
+        0
+      ]
+    ],
+    "score": 0,
+    "turn": "move",
+    "history": [],
+    "turnNumber": 0
+  },
+  "config": {
+    "rows": 4,
+    "cols": 4,
+    "storageKey": "local2048_v2",
+    "tileValues": [
+      2,
+      4
+    ],
+    "initialPlacementsCount": 0
+  }
+}
