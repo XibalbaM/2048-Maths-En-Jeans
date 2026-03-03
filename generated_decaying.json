@@ -3,25 +3,25 @@
     "grid": [
       [
         1024,
-        16,
         8,
-        0
-      ],
-      [
-        1024,
-        32,
-        8,
-        0
-      ],
-      [
-        1024,
-        32,
         0,
         0
       ],
       [
         512,
-        128,
+        16,
+        0,
+        0
+      ],
+      [
+        256,
+        32,
+        0,
+        0
+      ],
+      [
+        64,
+        64,
         0,
         0
       ]
@@ -39,8 +39,8 @@
       2,
       4
     ],
-    "initialPlacementsCount": 0,
     "firstPlayerStrategy": "Fichier",
-    "secondPlayerStrategy": "Fichier"
+    "secondPlayerStrategy": "Fichier",
+    "initialPlacementsCount": 0
   }
 }

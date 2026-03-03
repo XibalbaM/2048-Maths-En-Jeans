@@ -5,24 +5,25 @@ import { promptSecondPlayer } from './interfaces/views/second_player.js';
 import { animateMoves } from './interfaces/animations.js';
 import { render } from './interfaces/rendering.js';
 import { simulate } from './utils.js';
+import {
+    addTileAt as addTileAtInGrid,
+    createEmptyGrid,
+    moveLeftOnce,
+    restoreResults,
+    rotate,
+    rotatedForDirection
+} from './engine.mjs';
 
 export function isSpectatorModeEnabled() {
     return Boolean(State.config.firstPlayerStrategy && State.config.secondPlayerStrategy);
 }
 
 /**
- * Create a copy of the grid
- * @param {number[][]} g - Grid to copy
- * @returns {number[][]} Deep copy of the grid
- */
-function copyGrid(g) { return g.map(row => row.slice()); }
-
-/**
  * Reset the grid to empty state
  * @returns {void}
  */
 function resetGrid() {
-    State.game.grid = Array.from({ length: State.config.rows }, () => Array(State.config.cols).fill(0));
+    State.game.grid = createEmptyGrid(State.config.rows, State.config.cols);
 }
 
 // Persistence helpers moved to app/data.js (global DataStore)
@@ -35,114 +36,7 @@ function resetGrid() {
  * @returns {boolean} True if tile was added, false if cell was occupied
  */
 export function addTileAt(r, c, value) {
-    if (value === 0) {
-        State.game.grid[r][c] = 0;
-        return true;
-    } else {
-        if (State.game.grid[r][c] !== 0) return false;
-        State.game.grid[r][c] = value;
-        return true;
-    }
-}
-
-/**
- * Rotate a grid clockwise by specified number of 90-degree turns
- * @param {number[][]} g - Grid to rotate
- * @param {number} [times=1] - Number of 90-degree clockwise rotations
- * @returns {number[][]} Rotated grid
- */
-export function rotate(g, times = 1) {
-    let res = copyGrid(g);
-    for (let t = 0; t < times; t++) {
-        const rows = res.length;
-        const cols = res[0].length;
-        const tmp = Array.from({ length: cols }, () => Array(rows).fill(0));
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) tmp[c][rows - 1 - r] = res[r][c];
-        res = tmp;
-    }
-    return res;
-}
-
-/**
- * Move all tiles left and merge adjacent matching tiles
- * @param {number[][]} g - Grid to process
- * @returns {MoveResult} Result containing new grid, movement info, and score
- */
-export function moveLeftOnce(g) {
-    // Re-implementation to also produce movement mapping for animations
-    let moved = false; let mergedScore = 0;
-    const rows = g.length;
-    const cols = g[0].length;
-    const out = Array.from({ length: rows }, () => Array(cols).fill(0));
-    /** @type {TileMove[]} */
-    const moves = [];
-    /** @type {MergedDestination[]} */
-    const mergedDestinations = [];
-
-    for (let r = 0; r < rows; r++) {
-        // collect non-zero tiles with original columns
-        const entries = [];
-        for (let c = 0; c < cols; c++) {
-            const v = g[r][c];
-            if (v !== 0) entries.push({ c, val: v });
-        }
-        let pos = 0; // destination column
-        for (let i = 0; i < entries.length;) {
-            const cur = entries[i];
-            if (i + 1 < entries.length && entries[i + 1].val === cur.val) {
-                const mergeVal = cur.val * 2;
-                out[r][pos] = mergeVal;
-                mergedScore += mergeVal;
-                // two tiles move/merge into the same destination
-                moves.push({ fromR: r, fromC: cur.c, toR: r, toC: pos, value: cur.val, merged: true, newValue: mergeVal });
-                moves.push({ fromR: r, fromC: entries[i + 1].c, toR: r, toC: pos, value: entries[i + 1].val, merged: true, newValue: mergeVal });
-                mergedDestinations.push({ r, c: pos, newValue: mergeVal });
-                if (cur.c !== pos || entries[i + 1].c !== pos) moved = true;
-                i += 2; pos += 1;
-            } else {
-                out[r][pos] = cur.val;
-                moves.push({ fromR: r, fromC: cur.c, toR: r, toC: pos, value: cur.val, merged: false });
-                if (cur.c !== pos) moved = true;
-                i += 1; pos += 1;
-            }
-        }
-    }
-    return { grid: out, moved, mergedScore, moves, mergedDestinations };
-}
-
-/**
- * Map movement direction to number of clockwise rotations needed
- * @param {Direction} direction - Movement direction
- * @returns {number} Number of rotations (0-3)
- */
-export function rotatedForDirection(direction) {
-    // left:0, up:3, right:2, down:1  (mapping chosen so that moveLeftOnce handles left)
-    if (direction === 'left') return 0;
-    if (direction === 'up') return 3;
-    if (direction === 'right') return 2;
-    if (direction === 'down') return 1;
-    return 0;
-}
-
-/**
- * Rotate a coordinate clockwise by specified number of 90-degree turns
- * @param {number} r - Row coordinate
- * @param {number} c - Column coordinate
- * @param {number} startRows - Initial number of rows
- * @param {number} startCols - Initial number of columns
- * @param {number} [times=1] - Number of 90-degree clockwise rotations
- * @returns {[number, number]} New [row, column] coordinates
- */
-function rotateCoord(r, c, startRows, startCols, times = 1) {
-    let rr = r, cc = c, curRows = startRows, curCols = startCols;
-    for (let t = 0; t < times; t++) {
-        const nrr = cc;
-        const ncc = curRows - 1 - rr;
-        rr = nrr; cc = ncc;
-        // swap dims
-        const tmp = curRows; curRows = curCols; curCols = tmp;
-    }
-    return [rr, cc];
+    return addTileAtInGrid(State.game.grid, r, c, value);
 }
 
 
@@ -242,53 +136,6 @@ async function second_player(count = 1, options = {}) {
     State.game.turn = 'move';
     DataStore.saveGame();
     render();
-}
-
-/**
- * Restore movement results to original orientation
- * @param {MoveResult} result - Result from moveLeftOnce
- * @param {number} rotatedTimes - Number of times the grid was rotated
- * @returns {MoveResult} Result with moves and mergedDestinations in original orientation
- */
-export function restoreResults(result, rotatedTimes) {
-    if (rotatedTimes === 0) return result;
-    // rotate moves and mergedDestinations back to original orientation
-    const inv = (4 - rotatedTimes) % 4;
-    /** @Type number[][] */
-    const rotatedGrid = rotate(result.grid, inv);
-
-    // For rotateCoord, we need the dimensions at the start of the inverse rotation.
-    // result.grid is the grid AFTER moveLeftOnce (which operates on 'working' grid).
-    // The working grid has dimensions relative to how many times we rotated.
-    // However, rotateCoord simulates rotation step by step.
-    // We want to transform from (r, c) in 'working' grid to (r, c) in original 'prev' grid.
-    // 'working' grid dimensions:
-    const workingRows = result.grid.length;
-    const workingCols = result.grid[0].length;
-
-    /** @type {TileMove[]} */
-    const rotatedMoves = result.moves.map(m => {
-        const [fromR, fromC] = rotateCoord(m.fromR, m.fromC, workingRows, workingCols, inv);
-        const [toR, toC] = rotateCoord(m.toR, m.toC, workingRows, workingCols, inv);
-        return {
-            fromR, fromC, toR, toC,
-            value: m.value,
-            merged: m.merged,
-            newValue: m.newValue
-        };
-    });
-    /** @type {MergedDestination[]} */
-    const rotatedMergedDestinations = result.mergedDestinations.map(md => {
-        const [rr, cc] = rotateCoord(md.r, md.c, workingRows, workingCols, inv);
-        return { r: rr, c: cc, newValue: md.newValue };
-    });
-    return {
-        grid: rotatedGrid,
-        moved: result.moved,
-        mergedScore: result.mergedScore,
-        moves: rotatedMoves,
-        mergedDestinations: rotatedMergedDestinations
-    };
 }
 
 /**
