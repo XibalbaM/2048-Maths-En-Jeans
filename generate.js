@@ -51,8 +51,8 @@ function decayToState(decaying, rows, cols) {
             cols,
             storageKey: "local2048_v2",
             tileValues: [2, 4],
-            firstPlayerStrategy: undefined,
-            secondPlayerStrategy: undefined,
+            firstPlayerStrategy: "Fichier",
+            secondPlayerStrategy: "Fichier",
             initialPlacementsCount: 0,
             loadedHistory: undefined
         }

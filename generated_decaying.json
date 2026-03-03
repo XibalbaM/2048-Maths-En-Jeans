@@ -39,6 +39,8 @@
       2,
       4
     ],
-    "initialPlacementsCount": 0
+    "initialPlacementsCount": 0,
+    "firstPlayerStrategy": "Fichier",
+    "secondPlayerStrategy": "Fichier"
   }
 }
