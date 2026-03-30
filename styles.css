@@ -19,8 +19,10 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  padding-bottom: 0;
   background: #f0eadf;
   font-family: var(--font-family);
+  margin: 0;
 }
 
 .container {
@@ -378,15 +380,16 @@ button:hover {
 }
 
 button#reset {
+  margin: auto;
   margin-top: 50px;
-  margin-left: 12px;
   background: #d9534f;
   border: none;
   color: white;
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px
+  font-size: 12px;
+  text-align: center;
 }
 
 button#reset:hover {
@@ -428,8 +431,4 @@ button#reset:hover {
   :root {
     --cell-size: 64px
   }
-}
-
-html {
-  overflow-y: hidden;
 }
