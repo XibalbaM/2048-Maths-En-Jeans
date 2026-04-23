@@ -22,3 +22,5 @@ export const exportStateBtn = document.getElementById('export-state');
 export const importStateBtn = document.getElementById('import-state');
 /** @type {HTMLElement | null} */
 export const turnIndicatorEl = document.getElementById('turn-indicator');
+/** @type {HTMLElement | null} */
+export const bodyEl = document.body;

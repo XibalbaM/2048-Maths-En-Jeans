@@ -1,7 +1,7 @@
 import { newGame, turn, goBackOneTurn, spectatorStep, isSpectatorModeEnabled } from './game.js';
 import { showConfigPopup } from './interfaces/views/config.js';
 import { showEditMode } from './interfaces/views/edit.js';
-import { newBtn, editBtn, resetBtn, boardEl, exportBtn, importBtn, exportStateBtn, importStateBtn } from './interfaces/elements.js';
+import { newBtn, editBtn, resetBtn, bodyEl, exportBtn, importBtn, exportStateBtn, importStateBtn, boardEl } from './interfaces/elements.js';
 import DataStore from './data.js';
 import State from './state.js';
 import { configPopupOpen } from './interfaces/views/config.js';
@@ -12,12 +12,11 @@ let isProcessingKeyEvent = false;
 
 // Keyboard & touch
 window.addEventListener('keydown', async (e) => {
-    e.preventDefault();
     if (isProcessingKeyEvent) return;
     const key = e.key;
     const spectator = isSpectatorModeEnabled();
     let moved = false;
-    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',' '].includes(key)) e.preventDefault();
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',' ', 'Backspace'].includes(key)) e.preventDefault();
     if (spectator) {
         if (key === ' ') {
             isProcessingKeyEvent = true;
@@ -44,10 +43,13 @@ window.addEventListener('keydown', async (e) => {
 
 // touch swipe support
 let touchStartX = 0, touchStartY = 0;
-boardEl.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY } });
-boardEl.addEventListener('touchend', async (e) => {
+bodyEl.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY } });
+bodyEl.addEventListener('touchend', async (e) => {
     if (!touchStartX) return;
     if (isSpectatorModeEnabled()) { touchStartX = 0; touchStartY = 0; return; }
+    if (configPopupOpen) { touchStartX = 0; touchStartY = 0; return; }
+    if (isProcessingKeyEvent) { touchStartX = 0; touchStartY = 0; return; }
+    isProcessingKeyEvent = true;
     const dx = (e.changedTouches[0].clientX - touchStartX);
     const dy = (e.changedTouches[0].clientY - touchStartY);
     const absX = Math.abs(dx), absY = Math.abs(dy);
@@ -57,6 +59,7 @@ boardEl.addEventListener('touchend', async (e) => {
         DataStore.saveGame();
     }
     touchStartX = 0; touchStartY = 0;
+    isProcessingKeyEvent = false;
 });
 
 newBtn.addEventListener('click', () => {
