@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>∆2048 — Jeu local</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
   <div class="container">
@@ -16,6 +16,7 @@
           <div id="score">0</div>
         </div>
         <button id="newgame">Nouvelle partie</button>
+        <button id="edit">Éditer</button>
       </div>
     </header>
 
@@ -27,7 +28,19 @@
       </div>
       <div class="tile-layer" id="tile-layer"></div>
     </div>
+    <div id="bottom_buttons">
+      <button id="export">Exporter les coups</button>
+      <button id="import">Charger des coups</button>
+    </div>
+    <div id="bottom_buttons">
+      <button id="export-state">Exporter l'état</button>
+      <button id="import-state">Importer l'état</button>
+    </div>
+    <div id="bottom_buttons">
+      <button id="reset">Réinitialiser tout</button>
+    </div>
+  </div>
 
-  <script type="module" src="app.js"></script>
+  <script type="module" src="../app.js"></script>
 </body>
 </html>
