@@ -193,7 +193,9 @@ export function encodeState(state, inputSize) {
     const grid = state.grid;
     const rows = grid.length;
     const cols = rows > 0 ? grid[0].length : 0;
-    const expectedSize = inputSize ?? rows * cols;
+    const baseSize = rows * cols;
+    const metaFeatures = 4;
+    const expectedSize = inputSize ?? (baseSize + metaFeatures);
 
     const vec = new Array(expectedSize).fill(0);
     let idx = 0;
@@ -204,18 +206,67 @@ export function encodeState(state, inputSize) {
             vec[idx++] = v > 0 ? Math.log2(v) / 16 : 0;
         }
     }
+
+    if (idx < expectedSize) {
+        const emptyCount = grid.reduce((sum, row) => sum + row.filter(v => v === 0).length, 0);
+        const cellCount = Math.max(1, rows * cols);
+        const normalizedScore = Math.log2((state.score || 0) + 1) / 20;
+        const normalizedTurnNumber = Math.min(1, (state.turnNumber || 0) / 2048);
+        const moverTurn = state.turn === 'move' ? 1 : 0;
+        const emptyRatio = emptyCount / cellCount;
+        const extras = [moverTurn, normalizedScore, emptyRatio, normalizedTurnNumber];
+        for (const feature of extras) {
+            if (idx >= expectedSize) break;
+            vec[idx++] = feature;
+        }
+    }
+
     return vec;
 }
 
 // ─── Default network instance ─────────────────────────────────────────────────
 
 /**
- * Default network sized for a 4 × 4 grid:
- *   16 inputs → 128 hidden (ReLU) → 64 hidden (ReLU) → 1 output (linear).
+ * Default model sized for a 4 × 4 grid with metadata:
+ *   20 inputs (16 cells + 4 meta features) → 256 hidden (ReLU) → 128 hidden (ReLU) → 64 hidden (ReLU) → 1 output (linear).
  *
- * Replace weights via `defaultNetwork.layers[i].weights = ...` or load from JSON
- * to plug in trained parameters.
- *
+ * In browser mode, this is automatically replaced (if available) by:
+ * - /default.model (or /default.model.json)
+ */
+export let defaultModel = new NeuralNetwork([20, 512, 256, 128, 64, 32, 16, 1]);
+
+/**
+ * Backward-compatible alias.
  * @type {NeuralNetwork}
  */
-export const defaultNetwork = new NeuralNetwork([16, 128, 64, 1]);
+export { defaultModel as defaultNetwork };
+
+async function tryLoadNetwork(path) {
+    try {
+        const response = await fetch(path, { cache: 'no-store' });
+        if (!response.ok) return null;
+        const jsonText = await response.text();
+        return NeuralNetwork.fromJSON(jsonText);
+    } catch {
+        return null;
+    }
+}
+
+export async function loadDefaultNetworks() {
+    if (typeof window === 'undefined' || typeof fetch === 'undefined') {
+        return defaultModel;
+    }
+
+    const model = (await tryLoadNetwork('/default.model'))
+        || (await tryLoadNetwork('/default.model.json'));
+    if (model) {
+        defaultModel = model;
+        console.log('Loaded default model from server.');
+    }
+
+    return defaultModel;
+}
+
+if (typeof window !== 'undefined') {
+    loadDefaultNetworks();
+}

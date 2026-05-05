@@ -11,10 +11,10 @@ import DataStore from '../../data.js';
 export function promptSecondPlayer(count = 1) {
     function callback(actions) {}
     return abstractEdit(count,
-        "Joueur 2 — placez $count tuile(s). Choisissez une case vide et une valeur.",
+        `Joueur 2 — placez $count tuile${count > 1 ? 's' : ''}. Choisissez une case vide et une valeur.`,
         State.config.tileValues,
         false,
-        "Passer",
+        document.URL.includes("free") ? "Passer" : null,
         callback,
         callback
     );

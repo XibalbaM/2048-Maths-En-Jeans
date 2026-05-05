@@ -188,17 +188,19 @@ export async function abstractEdit(count, titleText, allowedValues, allowRemove,
             });
         });
 
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = replaceCount(closeText, placementsLeft);
-        cancelBtn.onclick = () => {
-            overlay.remove();
-            closeCallback(actions);
-            resolve(actions);
-        };
-
         panel.appendChild(pickerGrid);
         panel.appendChild(valuesDiv);
-        panel.appendChild(cancelBtn);
+
+        if (closeText) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = replaceCount(closeText, placementsLeft);
+            cancelBtn.onclick = () => {
+                overlay.remove();
+                closeCallback(actions);
+                resolve(actions);
+            };
+            panel.appendChild(cancelBtn);
+        }
 
         overlay.appendChild(title);
         overlay.appendChild(panel);

@@ -7,27 +7,23 @@ import coopMax2 from "./mover/coop-max.js";
 import coopMin from "./placer/coop-min.js";
 import coopMin2 from "./mover/coop-min.js";
 import coopMaxBis from "./placer/coop-max-bis.js";
-import minmaxM from "./mover/minmax.js";
-import minmaxP from "./placer/minmax.js";
+import minmaxM from "./mover/cooperative.js";
+import minmaxP from "./placer/cooperative.js";
+import { defaultModel } from "./nn.js";
 
 /**
  * @type {PlayerOneStrategy[]}
  */
 export const firstPlayerStrategies = [
-    fileM,
-    coopMax2,
-    coopMin2,
     random2,
-    minmaxM
+    fileM,
 ];
+if (document.URL.includes("free")) firstPlayerStrategies.push(minmaxM(defaultModel), coopMax2, coopMin2,)
 /**
  * @type {PlayerTwoStrategy[]}
  */
 export const secondPlayerStrategies = [
     random,
-    fileP,
-    coopMax,
-    coopMin,
-    coopMaxBis,
-    minmaxP
+    fileP
 ]
+if (document.URL.includes("free")) secondPlayerStrategies.push(minmaxP(defaultModel), coopMax, coopMin, coopMaxBis)
